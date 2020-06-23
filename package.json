@@ -1,0 +1,52 @@
+{
+  "name": "reseau",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build-react": "webpack --config react.webpack.config.js",
+    "start-react": "webpack-dev-server --config react.webpack.config.js --open --hot",
+    "start-server": "NEST_DEV='true' webpack --config nest.webpack.config.js",
+    "build-server": "webpack --config nest.webpack.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erwanjb/reseau.git"
+  },
+  "author": "erwanjb",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/erwanjb/reseau/issues"
+  },
+  "homepage": "https://github.com/erwanjb/reseau#readme",
+  "devDependencies": {
+    "@babel/core": "^7.10.3",
+    "@babel/preset-env": "^7.10.3",
+    "@babel/preset-react": "^7.10.1",
+    "@babel/preset-typescript": "^7.10.1",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^3.6.0",
+    "dotenv-webpack": "^1.8.0",
+    "start-server-webpack-plugin": "^2.2.5",
+    "style-loader": "^1.2.1",
+    "svg-url-loader": "^6.0.0",
+    "ts-loader": "^7.0.5",
+    "tsconfig-paths-webpack-plugin": "^3.2.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "@nestjs/common": "^7.2.0",
+    "@nestjs/core": "^7.2.0",
+    "@nestjs/platform-express": "^7.2.0",
+    "@types/react": "^16.9.38",
+    "@types/react-dom": "^16.9.8",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.5.5",
+    "typescript": "^3.9.5"
+  }
+}
