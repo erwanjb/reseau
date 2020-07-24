@@ -2,6 +2,7 @@ import React, { FC, useCallback, useState } from 'react';
 import { Paper, Typography, TextField, Button, makeStyles, FormHelperText, Avatar } from "@material-ui/core";
 import { useForm } from "react-hook-form";
 import { useDropzone } from 'react-dropzone';
+import useApi from "../hooks/useApi";
 
 interface FileReaderEventTarget extends EventTarget {
     result: Buffer
@@ -13,6 +14,8 @@ interface FileReaderEvent extends Event {
 }
 
 const AddUser: FC = () => {
+
+    const api = useApi();
 
     const [namePicture, setNamePicture] = useState('');
     const [errorPicture, setErrorPicture] = useState(false);
@@ -72,19 +75,31 @@ const AddUser: FC = () => {
                     const src: string = event.target.result as string;
                     setSrcPicture(src);
                 }
-                reader.readAsDataURL(file)
+                reader.readAsDataURL(file);
             })
         }
     }, []);
     
     const { getRootProps, getInputProps, isDragActive } = useDropzone({onDrop});
-    const onSubmit = (a) => {
-        console.log(a);
+    const onSubmit = async (user) => {
         if (errorPicture) {
             setError('picture', {
                 type: "image",
                 message: "Mettre une image"
             });
+        } else {
+            const formData = new FormData();
+            formData.append('email', user.email);
+            formData.append('firstName', user.firstName);
+            formData.append('lastName', user.lastName);
+            formData.append('job', user.job);
+            formData.append('phone', user.phone);
+            formData.append('description', user.description);
+            formData.append('picture', user.picture[0]);
+
+            const response = await api.post('users', formData, {headers: {
+                'Content-Type': 'form-data'
+            }});
         }
     }
 
