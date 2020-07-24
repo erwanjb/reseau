@@ -5,8 +5,9 @@
   "scripts": {
     "build-react": "webpack --config react.webpack.config.js",
     "start-react": "webpack-dev-server --config react.webpack.config.js --open --hot",
-    "start-server": "NEST_DEV='true' webpack --config nest.webpack.config.js",
-    "build-server": "webpack --config nest.webpack.config.js",
+    "start-server": "npm run reset-server && webpack --config nest.webpack.config.js",
+    "reset-server": "if exist rmdir /s dist-server",
+    "run-server": "node dist-server/server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,12 +22,15 @@
   "homepage": "https://github.com/erwanjb/reseau#readme",
   "devDependencies": {
     "@babel/core": "^7.10.3",
+    "@babel/plugin-transform-regenerator": "^7.10.4",
+    "@babel/plugin-transform-runtime": "^7.10.5",
     "@babel/preset-env": "^7.10.3",
     "@babel/preset-react": "^7.10.1",
     "@babel/preset-typescript": "^7.10.1",
     "babel-loader": "^8.1.0",
     "css-loader": "^3.6.0",
     "dotenv-webpack": "^1.8.0",
+    "file-loader": "^6.0.0",
     "start-server-webpack-plugin": "^2.2.5",
     "style-loader": "^1.2.1",
     "svg-url-loader": "^6.0.0",
@@ -38,15 +42,31 @@
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
+    "@devexpress/dx-react-chart": "^2.6.4",
+    "@devexpress/dx-react-chart-material-ui": "^2.6.4",
+    "@devexpress/dx-react-core": "^2.6.4",
+    "@material-ui/core": "^4.11.0",
     "@nestjs/common": "^7.2.0",
     "@nestjs/core": "^7.2.0",
     "@nestjs/platform-express": "^7.2.0",
+    "@nestjs/typeorm": "^7.1.0",
+    "@types/cors": "^2.8.6",
     "@types/react": "^16.9.38",
     "@types/react-dom": "^16.9.8",
+    "@types/react-router-dom": "^5.1.5",
+    "axios": "^0.19.2",
+    "class-validator": "^0.12.2",
+    "cors": "^2.8.5",
+    "fontsource-acme": "^2.1.3",
+    "mysql": "^2.18.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-dropzone": "^11.0.2",
+    "react-hook-form": "^6.0.8",
+    "react-router-dom": "^5.2.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.5",
+    "typeorm": "^0.2.25",
     "typescript": "^3.9.5"
   }
 }

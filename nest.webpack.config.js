@@ -12,10 +12,10 @@ module.exports = {
   devServer: {
     // Don't refresh if hot loading fails. Good while
     // implementing the client interface.
-    hotOnly: true,
+    //hotOnly: true,
 
     // If you want to refresh on errors too, set
-    // hot: true,
+    hot: true,
   },
   target: 'node',
   externals: [
@@ -41,17 +41,25 @@ module.exports = {
     ],
   },
   mode: 'development',
+  node: {
+    __dirname: false,
+  },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new TsconfigPathsPlugin({configFile: 'tsconfig.nest.json'}),
     new Dotenv(),
-    ... (process.env.NEST_DEV === 'true' ? [new StartServerPlugin({ name: 'server.js' })] : []),
+    new StartServerPlugin({ name: 'server.js' })
   ],
   output: {
     path: path.join(__dirname, 'dist-server'),
     filename: 'server.js',
   },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js'],
+    plugins: [
+      new TsconfigPathsPlugin({configFile: 'tsconfig.nest.json'})
+    ]
+  }
 };

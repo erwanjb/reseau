@@ -2,3 +2,4 @@ node_modules
 dist-react/index.js
 dist-react/index.js.map
 dist-server
+.env
