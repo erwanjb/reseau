@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Param, Body, UseInterceptors, UploadedFile, UnsupportedMediaTypeException } from '@nestjs/common';
-import { FileInterceptor, AnyFilesInterceptor  } from "@nestjs/platform-express";
+import { Controller, Get, Post, Param, Query, Req, Res } from '@nestjs/common';
 import { UsersService } from "./users.service";
 import { User } from "./users.entity";
-import { diskStorage } from "multer";
+import { Request } from "express";
+
+interface RequestStorage extends Request {
+    verifyEmailIfExist: boolean;
+}
 
 @Controller('users')
 export class UsersController { 
@@ -10,25 +13,13 @@ export class UsersController {
     constructor(private readonly userService: UsersService) {}
 
     @Get("/:id")
-    getUserById(@Param("id") id: string ): Promise<User> {
-        return this.userService.findById(id);
+    getUserById(@Param("id") id: string ): Promise<any> {
+        return this.userService.findUserById(id);
     }
 
     @Post()
-    @UseInterceptors(FileInterceptor('picture', {
-        storage: diskStorage({
-            destination: "./dist-react/image",
-            filename: (req, file, cb) =>
-                cb(null, `${Date.now()}_${file.originalname}`),
-        }),
-        fileFilter: (req, file, cb) => {
-            const supportedMimetypes = ["image/jpeg", "image/png"];
-            supportedMimetypes.includes(file.mimetype)
-                ? cb(null, true)
-                : cb(new UnsupportedMediaTypeException(), false);
-        },
-    }))
-    create(@UploadedFile() file, @Body() body) {
-        console.log(file, body)
+    async create(@Req() req, @Res() res) {
+        const response = await this.userService.create(req, res);
+        return response;
     }
 }

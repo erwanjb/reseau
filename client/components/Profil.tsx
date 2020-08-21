@@ -1,7 +1,8 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Avatar, Typography, Paper, makeStyles, useMediaQuery, Tooltip } from '@material-ui/core';
+import { Avatar, Typography, Paper, makeStyles, useMediaQuery, Tooltip, Button } from '@material-ui/core';
 import { useHistory, useParams } from 'react-router-dom';
 import useApi from "../hooks/useApi";
+import NavBar from "./NavBar";
 
 interface Project {
     title: string;
@@ -9,7 +10,7 @@ interface Project {
     description: string;
 }
 
-const projects: Project[] = [
+const hello: Project[] = [
     {
         title: 'Pousse des arbres',
         image: "https://image.freepik.com/photos-gratuite/jeune-arbre-qui-pousse-dans-jardin-lever-du-soleil-jour-terre-concept-eco_34152-1510.jpg",
@@ -49,10 +50,11 @@ const Profil: FC = () => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState(NaN);
+    const [phone, setPhone] = useState('');
     const [description, setDescription] = useState('');
     const [picture, setPicture] = useState('');
     const [job, setJob] = useState('');
+    const [projects, setPojects] = useState([]);
 
     useEffect(() => {
         const start = async () => {
@@ -64,11 +66,11 @@ const Profil: FC = () => {
             setDescription(user.data.description);
             setPicture(user.data.picture);
             setJob(user.data.job);
+            setPojects(user.data.projects);
         }
         start();
     }, []);
     const history = useHistory();
-
     const maxWidth900 = useMediaQuery('(max-width:900px)');
     const maxWidth500 = useMediaQuery('(max-width:500px)');
 
@@ -166,12 +168,17 @@ const Profil: FC = () => {
 
     const classes = useStyles();
 
-    const handleClick = () => {
-        history.push('/project');
+    const handleClick = (id) => {
+        history.push('/project/' + id);
+    }
+    
+    const handleCreate = () => {
+        history.push('/addProject');
     }
 
     return (
         <div>
+            <NavBar></NavBar>
             <div className={classes.container}>
                 <div className={classes.containerProfil}>
                     <div className={classes.fixed}>
@@ -179,7 +186,7 @@ const Profil: FC = () => {
                             <Avatar
                                 className={classes.avatar}
                                 alt={firstName + ' ' + lastName}
-                                src={picture}
+                                src={"/image/" + picture}
                             ></Avatar>
                             <div className={classes.description}>
                                 <Tooltip title={firstName + ' ' + lastName}>
@@ -201,12 +208,16 @@ const Profil: FC = () => {
                 </div>
                 <div className={classes.mainProject}>
                     <Typography variant="h5" className={classes.titleProject}>Mes projets</Typography>
+                    <Button
+                        variant="outlined"
+                        onClick={handleCreate}
+                    >Créer un projet</Button>
                     <div className={classes.contentProject}>
                         {projects.map((project, index) => {
                             return (
                                 <a 
                                     className={classes.btn}
-                                    onClick={handleClick} 
+                                    onClick={handleClick.bind(null, project.id)} 
                                     key={'' + index}
                                 >
                                     <Paper 
@@ -215,7 +226,7 @@ const Profil: FC = () => {
                                     >
                                         <div className={classes.headerProject}>
                                             <Avatar
-                                                src={project.image}
+                                                src={"/image/" + project.picture}
                                                 alt={project.title}
                                             ></Avatar>
                                             <Tooltip title={project.title}>

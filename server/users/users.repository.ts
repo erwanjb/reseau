@@ -7,7 +7,8 @@ import {
 import { User } from "./users.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { GetUsersFilterDto } from "./dto/get-users-filter.dto";
-import { UpdateUserDto } from "./dto/update-user.dto"
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { StatusEnum } from "./enums/statusEnum"
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -27,6 +28,20 @@ export class UserRepository extends Repository<User> {
             .set(user)
             .where("id = :id", { id: user.id })
             .execute();
+    }
+
+    async findUserById (id: string) {
+        const user = await this.createQueryBuilder('user')
+        .where("user.id = :id", { id })
+        .andWhere("user.status = :status", {status: StatusEnum.ENABLED})
+        .leftJoinAndSelect('user.projectUser', 'projectUser')
+        .leftJoinAndSelect('projectUser.project', 'projects')
+        .getOne();
+
+        /*
+            equivaut à const user = await this.findOne({ relations: ["projectUser", "projectUser.project"], where: {id} }) 
+        */
+        return user;
     }
 
     async findUsersWithFilters(filters: GetUsersFilterDto): Promise<User[]> {
@@ -59,7 +74,7 @@ export class UserRepository extends Repository<User> {
         } */
 
         const users = await query
-            // .leftJoinAndSelect("user.location", "location")
+            .leftJoinAndSelect("user.projectUser.project", "projects")
             .getMany();
 
         return users;

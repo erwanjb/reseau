@@ -1,5 +1,6 @@
 import React, { useMemo, FC, createContext } from "react";
 import axios, { AxiosInstance } from "axios";
+import useToken from "../hooks/useToken";
 
 // import useToken from "../hooks/useToken";
 
@@ -11,8 +12,7 @@ interface IProps {
 
 export const ApiProvider: FC<IProps> = ({ baseURL, children }) => {
     
-    const client = axios.create({ baseURL });
-    /* const token = useToken();
+  const token = useToken();
 
   const client = useMemo(() => {
     const instance = axios.create({ baseURL });
@@ -22,7 +22,7 @@ export const ApiProvider: FC<IProps> = ({ baseURL, children }) => {
     }
 
     return instance;
-  }, [baseURL, token]); */
+  }, [baseURL, token]);
 
   return <ApiContext.Provider value={client}>{children}</ApiContext.Provider>;
 };

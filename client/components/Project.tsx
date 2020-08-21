@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { 
     Avatar, 
     Typography, 
@@ -10,9 +10,12 @@ import {
     CardContent,
     CardMedia,
     Paper,
-    Tooltip
+    Tooltip,
+    Button
 } from '@material-ui/core';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
+import useApi from "../hooks/useApi";
+import NavBar from './NavBar';
 
 interface Member {
     name: string;
@@ -50,7 +53,7 @@ const members: Member[] = [
     }
 ];
 
-const missions: Mission[] = [
+/* const missions: Mission[] = [
     {
         title: "Production d'engrais de masse",
         image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Flexible_intermediate_bulk_containers-Fertilizer.jpg/800px-Flexible_intermediate_bulk_containers-Fertilizer.jpg",
@@ -120,7 +123,7 @@ const missions: Mission[] = [
             }
         ]
     }
-];
+]; */
 
 const Project: FC = () => {
     const maxWidth500 = useMediaQuery('(max-width:500px)');
@@ -251,50 +254,92 @@ const Project: FC = () => {
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: 1
+        },
+        missionDesc : {
+            marginBottom: 10,
+            overflow: "hidden",
+            width: '100%',
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 3
         }
     });
 
+    const api = useApi();
     const classes = useStyles();
     const history = useHistory();
+    const { id } = useParams();
 
-    const handleClick = () => {
-        history.push('/profil');
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [picture, setPicture] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [missions, setMissions] = useState([]);
+
+    useEffect(() => {
+        const start = async () => {
+            const project =  await api.get(`projects/${id}`);
+            setTitle(project.data.title);
+            setDescription(project.data.description);
+            setPicture(project.data.picture);
+            setCategories(project.data.categories);
+            setUsers(project.data.users);
+            setMissions(project.data.missions);
+        }
+        start();
+    }, []);
+
+    const handleClick = (id) => {
+        history.push('/profil/' + id);
+    }
+
+    const AddMission = () => {
+        history.push('/addMission/' + id);
     }
 
     return (
         <div>
+            <NavBar></NavBar>
             <div className={classes.container}>
                 <div className={classes.contentProject}>
                     <div className={classes.fixed}>
                         <div className={classes.project}>
                             <Avatar
                                 className={classes.avatar}
-                                src="https://image.freepik.com/photos-gratuite/jeune-arbre-qui-pousse-dans-jardin-lever-du-soleil-jour-terre-concept-eco_34152-1510.jpg"                     
-                                alt="Pousse des arbres"
+                                src={"/image/" + picture}           
+                                alt={title}
                             >
                             </Avatar>
                             <div className={classes.description}>
-                                <Tooltip title="Pousse des arbres">
-                                    <Typography className={classes.colorBlue} variant="h2">Pousse des arbres</Typography>
+                                <Tooltip title={title}>
+                                    <Typography className={classes.colorBlue} variant="h2">{title}</Typography>
                                 </Tooltip>
-                                <Tooltip title="Ecologie">
-                                    <Typography className={classes.colorBlue} variant="h4">Ecologie</Typography>
-                                </Tooltip>
+                                <div>
+                                    {categories.map((category, index) => {
+                                        return (
+                                            <Tooltip key={"" + index} title={category.name}>
+                                                <Typography className={classes.colorBlue} variant="h4">{category.name}</Typography>
+                                            </Tooltip>
+                                        );
+                                    })
+                                    }
+                                </div>
                             </div>
                         </div>
                         <div>
                             <Typography className={classes.desc}>
-                                Verdir la planète un chantier d'avenir et de tous les jours Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                               {description}
                             </Typography>
                         </div>
                         <Typography className={classes.titleMembre} variant="h4">Membres</Typography>
                         <div className={classes.contentMember}>
                             {
-                                members.map((member, index) => {
+                                users.map((member, index) => {
                                     return(
                                         <a
                                             className={classes.btn}
-                                            onClick={handleClick}
+                                            onClick={handleClick.bind(null, member.id)}
                                         >
                                             <Paper 
                                                     className={classes.member}
@@ -302,11 +347,11 @@ const Project: FC = () => {
                                                 >
                                                 <div className={classes.headerMember}>
                                                     <Avatar
-                                                        src={member.image}
-                                                        alt={member.name}
+                                                        src={'/image/' + member.picture}
+                                                        alt={member.firstName +  ' ' + member.lastName}
                                                     ></Avatar>
-                                                    <Tooltip title={member.name}>
-                                                        <Typography className={classes.memberTitle}>{member.name}</Typography>
+                                                    <Tooltip title={member.firstName +  ' ' + member.lastName}>
+                                                        <Typography className={classes.memberTitle}>{member.firstName +  ' ' + member.lastName}</Typography>
                                                     </Tooltip>
                                                 </div>
                                                 <Typography>{member.role}</Typography>
@@ -328,6 +373,7 @@ const Project: FC = () => {
                         />
                         <Typography variant="body2" color="textSecondary">35%</Typography>
                     </div>
+                    <Button variant="outlined" color="primary" onClick={AddMission}>Ajouter une mission</Button>
                     <div>
                         <Typography className={classes.titleMission} variant="h4">Missions à effectuer</Typography>
                         <div className={classes.contentMission}>
@@ -336,26 +382,31 @@ const Project: FC = () => {
                                     <Card className={classes.root} variant="outlined">
                                         <CardHeader
                                             subheader={
-                                                <Tooltip title={mission.title}>
-                                                    <Typography className={classes.titleCard}>{mission.title}</Typography>
+                                                <Tooltip title={mission.name}>
+                                                    <Typography className={classes.titleCard}>{mission.name}</Typography>
                                                 </Tooltip>
                                             }
                                         />
                                         <CardMedia
                                             className={classes.media}
-                                            image={mission.image}
-                                            title={mission.title}                      
+                                            image={ mission.picture ? "/image/" + mission.picture : "/image/business-3189797_1920.png"}
+                                            title={mission.name}                      
                                         />
                                         <CardContent>
+                                            <Tooltip  title={mission.description}>
+                                                <Typography className={classes.missionDesc}>{mission.description}</Typography>
+                                            </Tooltip>
                                             <Typography>Temps estimé: {mission.time}</Typography>
                                             <div className={classes.contentMemberMission}>
-                                                {mission.assignedTo.map((member, index) => {
+                                                {mission.users.map((member, index) => {
                                                     return (
-                                                        <Avatar
-                                                            src={member.image}
-                                                            alt={member.name}
-                                                        >
-                                                        </Avatar>
+                                                        <Tooltip key={""+index} title={member.firstName + ' ' + member.lastName}>
+                                                            <Avatar
+                                                                src={ "/image/" + member.picture}
+                                                                alt={member.firstName + ' ' + member.lastName}
+                                                            >
+                                                            </Avatar>
+                                                        </Tooltip>
                                                     );
                                                 })}
                                             </div>

@@ -1,8 +1,18 @@
 import { IsEmail, IsEnum, IsNumber, IsString, IsOptional } from "class-validator";
+import { StatusEnum } from "../enums/statusEnum";
 
 export class CreateUserDto {
     @IsEmail()
     email: string;
+
+    @IsString()
+    password: string;
+
+    @IsEnum(StatusEnum)
+    status: StatusEnum;
+
+    @IsString()
+    confirmToken: string; 
 
     @IsString()
     firstName: string;
@@ -21,7 +31,7 @@ export class CreateUserDto {
     description: string;
 
     @IsNumber()
-    phone: number
+    phone: string
 
     /* @IsEnum(UserStatus)
     status: UserStatus; */

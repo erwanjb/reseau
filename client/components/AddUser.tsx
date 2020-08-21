@@ -1,11 +1,20 @@
 import React, { FC, useCallback, useState } from 'react';
-import { Paper, Typography, TextField, Button, makeStyles, FormHelperText, Avatar } from "@material-ui/core";
+import { Paper, Typography, TextField, Button, makeStyles, FormHelperText, Avatar, Popover } from "@material-ui/core";
 import { useForm } from "react-hook-form";
 import { useDropzone } from 'react-dropzone';
 import useApi from "../hooks/useApi";
+import { useHistory } from 'react-router-dom';
 
 interface FileReaderEventTarget extends EventTarget {
     result: Buffer
+}
+interface Json {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    job: string;
+    phone: string;
 }
 
 interface FileReaderEvent extends Event {
@@ -56,9 +65,18 @@ const AddUser: FC = () => {
         label: {
             width: 260,
             display: 'flex'
+        },
+        popoverGreen: {
+            backgroundColor: '#2CFA67',
+            color: '#fff'
+        },
+        popoverRed: {
+            backgroundColor: '#f44336',
+            color: '#fff'
         }
     })
 
+    const history = useHistory();
     const classes = useStyles();
 
     const { register, handleSubmit, errors, setError } = useForm();
@@ -87,21 +105,53 @@ const AddUser: FC = () => {
                 type: "image",
                 message: "Mettre une image"
             });
+        } else if (user.password !== user.confirmPassword) {
+            setError('confirmPassword', {
+                type: "password",
+                message: "Egaliser les mots de passe"
+            });
         } else {
+
             const formData = new FormData();
             formData.append('email', user.email);
+            formData.append('password', user.password);
             formData.append('firstName', user.firstName);
             formData.append('lastName', user.lastName);
             formData.append('job', user.job);
             formData.append('phone', user.phone);
             formData.append('description', user.description);
+            
             formData.append('picture', user.picture[0]);
-
-            const response = await api.post('users', formData, {headers: {
-                'Content-Type': 'form-data'
-            }});
+            try {
+                await api.post('users', formData, {
+                    headers: {
+                        'content-type': 'multipart/form-data'
+                    }
+                });
+                setOpen(true);
+                setPopoverStatus(201);
+            } catch (err) {
+                console.log(err)
+                setOpen(true);
+                setPopoverStatus(409)
+            }
         }
     }
+
+    const onConnect = () => {
+        history.push('/connexion');
+    }
+
+    const [open, setOpen] = useState(false);
+    const [popoverStatus, setPopoverStatus] = useState(0);
+    
+    const handleClose = () => {
+        setOpen(false);
+    };
+    
+    const id = open ? 'simple-popover' : undefined;
+    
+    
 
     return (
         <div className={classes.body}>
@@ -117,6 +167,24 @@ const AddUser: FC = () => {
                         inputRef={register({ required: true, pattern:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/ })}
                         error={errors.email}
                         helperText={errors.email ? <Typography>Le mail est obligatoire en format mail -@-.-</Typography> : null}
+                    />
+                    <TextField
+                        className={classes.field}
+                        name="password"
+                        type="password"
+                        label={<Typography>Mot de passe</Typography>}
+                        inputRef={register({ required: true })}
+                        error={errors.password}
+                        helperText={errors.password ? <Typography>Le mot de passe est obligatoire</Typography> : null}
+                    />
+                    <TextField
+                        className={classes.field}
+                        name="confirmPassword"
+                        type="password"
+                        label={<Typography>Confirmation du mot de passe</Typography>}
+                        inputRef={register({ required: true })}
+                        error={errors.confirmPassword}
+                        helperText={errors.confirmPassword ? <Typography>La confirmation du mot de passe est obligatoire et doit correspondre au mot de passe</Typography> : null}
                     />
                     <TextField
                         className={classes.field}
@@ -187,8 +255,28 @@ const AddUser: FC = () => {
                         variant="outlined"
                         color="primary"
                     >Créer</Button>
+                    <Button
+                        color="primary"
+                        className={classes.field}
+                        onClick={onConnect}
+                    >
+                        Retour à la connexion
+                    </Button>
                 </form>
             </Paper>
+            <Popover
+                id={id}
+                open={open}
+                onClose={handleClose}
+                
+            >
+                {popoverStatus === 201 ? 
+                <Typography className={classes.popoverGreen}>Votre compte a été créé, allez sur la page de connexion pour vous connecter</Typography> : 
+                (popoverStatus === 409 ?
+                <Typography className={classes.popoverRed}>Un compte avec le même email existe déjà, veuillez changer de mail</Typography> :
+                null)    
+            }   
+            </Popover>
         </div>
     );
 };

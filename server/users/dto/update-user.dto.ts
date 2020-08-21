@@ -24,5 +24,5 @@ export class UpdateUserDto {
     description: string;
 
     @IsNumber()
-    phone: number
+    phone: string
 }

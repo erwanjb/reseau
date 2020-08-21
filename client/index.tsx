@@ -4,12 +4,22 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { ApiProvider } from "./contexts/ApiContext";
+import { Provider } from 'react-redux';
+import { AuthProvider } from "./contexts/AuthContext"
+import {store, persistor} from "./store";
+import { PersistGate } from 'redux-persist/integration/react';
 
 ReactDOM.render(
   <React.StrictMode>
-    <ApiProvider baseURL={process.env.API_URL || ""}>
-      <App />
-    </ApiProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <ApiProvider baseURL={process.env.API_URL || ""}>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ApiProvider>
+      </PersistGate>
+    </Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );
