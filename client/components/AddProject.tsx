@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState, useEffect } from 'react';
 import NavBar from './NavBar';
-import { Paper, makeStyles, Button, TextField, Typography, FormHelperText, Avatar, Chip, Popover } from "@material-ui/core";
+import { Paper, makeStyles, Button, TextField, Typography, FormHelperText, Avatar, Chip, Popover, Slider, FormLabel } from "@material-ui/core";
 import { Autocomplete } from '@material-ui/lab';
 import { useForm } from "react-hook-form";
 import { useDropzone } from 'react-dropzone';
@@ -58,12 +58,20 @@ const addProject: FC = () => {
         popoverRed: {
             backgroundColor: '#f44336',
             color: '#fff'
+        },
+        marginTop: {
+            marginTop: 20,
+            display: 'block'
+        },
+        marginTop50: {
+            marginTop: 50
         }
     });
     const [namePicture, setNamePicture] = useState('');
     const [errorPicture, setErrorPicture] = useState(false);
     const [srcPicture, setSrcPicture] = useState('');
-
+    const [time, setTime] = useState(0);
+ 
     const [open, setOpen] = useState(false);
     const [popoverStatus, setPopoverStatus] = useState(0);
     
@@ -113,6 +121,7 @@ const addProject: FC = () => {
             formData.append('role', project.role);
             formData.append('categories', JSON.stringify(categories));
             formData.append('userId', user.id);
+            formData.append('time', time.toString());
             
             formData.append('picture', project.picture[0]);
             try {
@@ -174,6 +183,10 @@ const addProject: FC = () => {
         setCategories(newCat);
     }
 
+    const onChange = (event, value) => {
+        setTime(value);
+    }
+
     return (
         <div>
             <NavBar></NavBar>
@@ -212,6 +225,8 @@ const addProject: FC = () => {
                             error={errors.role}
                             helperText={errors.role ? <Typography>Le rôle est obligatoire</Typography> : null}
                         />
+                        <FormLabel className={classes.marginTop}>Estimation du temps déjà réalisé (en %)</FormLabel>
+                        <Slider className={classes.marginTop50} defaultValue={time} valueLabelDisplay="on" onChange={onChange} />
                         <Autocomplete
                             className={classes.auto}
                             multiple

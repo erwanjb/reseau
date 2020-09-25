@@ -9,8 +9,11 @@ import SendResetPassword from "./components/SendResetPassword";
 import ResetPassword from "./components/ResetPassword";
 import AddProject from "./components/AddProject";
 import AddMission from "./components/AddMission";
+import InviteMember from "./components/InviteMember";
 import "fontsource-acme";
 import useAuth from "./hooks/useAuth";
+import UpdateUser from './components/UpdateUser';
+import ProjectMessaging from './components/ProjectMessaging';
 
 function App() {
   const auth = useAuth();
@@ -23,7 +26,7 @@ function App() {
   }
 
   const ConnexionRoute = ({path, ...props}) => {
-    return auth.isLogged ? <Redirect to={goodPath} /> : <Route {...props} path={path} />
+    return auth.isLogged ? <Redirect to={'/'} /> : <Route {...props} path={path} />
   }
 
   return (
@@ -34,11 +37,14 @@ function App() {
           <Route exact component={AddUser} path='/addUser' />
           <Route exact component={SendResetPassword} path='/resetPassword' />
           <Route exact component={ResetPassword} path='/resetPassword/:userId/:token' />
-          <AuthRoute exact component={Home} path='/' />
-          <AuthRoute exact component={Profil} path='/profil/:id' />
+          <Route exact component={Home} path='/' />
+          <Route exact component={Profil} path='/profil/:id' />
+          <Route exact component={InviteMember} path='/inviteMember/:projectId' />
+          <Route exact component={ProjectMessaging} path='/projectMessaging/:projectId' />
           <AuthRoute exact component={AddProject} path='/addProject' />
           <AuthRoute exact component={AddMission} path='/addMission/:projectId' />
-          <AuthRoute exact component={Project} path='/project/:id' />
+          <Route exact component={Project} path='/project/:id' />
+          <AuthRoute exact component={UpdateUser} path='/updateUser/:id' />
         </Switch>
       </Router>
     </div>

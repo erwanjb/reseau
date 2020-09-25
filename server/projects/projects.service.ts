@@ -16,7 +16,8 @@ interface Body {
     role: string; 
     title: string; 
     description: string, 
-    categories: string
+    categories: string,
+    time: number,
 }
 
 interface BodyMission {
@@ -24,7 +25,6 @@ interface BodyMission {
     description: string;
     time: string;
     users: string;
-    projectId: string;
 }
 
 interface UserToSend {
@@ -116,8 +116,8 @@ export class ProjectsService {
         });
 
         busboy.on('finish', async () => {
-            const { userId, role, title, description, categories } = body;
-            const project = { title, description, picture: fileNameToUpload, status: StatusEnumProject.ENABLED };
+            const { userId, role, title, time, description, categories } = body;
+            const project = { title, description, time, picture: fileNameToUpload, status: StatusEnumProject.ENABLED };
             const categoriesToSend = JSON.parse(categories).map(cat => ({ name: cat}));
             const userProject = {userId, role, adminRole: AdminRoleEnum.OWNER }
             const response = await this.projectRepository.createProject(project, categoriesToSend, userProject);
@@ -132,14 +132,18 @@ export class ProjectsService {
             throw new NotFoundException();
         }
 
+        if (found.status !== StatusEnumProject.ENABLED) {
+            throw new NotFoundException();
+        }
+
         found.users = found.userProject.filter(userProject => userProject.user.status === StatusEnumUser.ENABLED).map(userProject => {
-            const { password, status, ...userPayload} = userProject.user;        
+            const { password, status, email, phone, ...userPayload} = userProject.user;        
             return {role: userProject.role, adminRole: userProject.adminRole, ...userPayload}
         });
         found.missions = found.missions.map((mission) => {
             const { userMission, projectId, ...missionPayload } = mission as MissionToSend;
             missionPayload.users = mission.userMission.filter(userMission => userMission.user.status === StatusEnumUser.ENABLED).map(userMission => {
-                const { password, status, ...userPayload} = userMission.user;
+                const { password, status, email, phone, ...userPayload} = userMission.user;
                 return userPayload;
             })
             return missionPayload;
@@ -150,7 +154,7 @@ export class ProjectsService {
         return payload;
     }
 
-    async createMission(req, res) {
+    async createMission(projectId: string, req, res) {
         const body = {} as BodyMission;
         const busboy = new Busboy({ headers: req.headers });
 
@@ -159,8 +163,7 @@ export class ProjectsService {
         busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated) => {
             //add checks for field names and extract those values, for example I am expecting a 
             //hidden field with name (vehicleId)
-            body[fieldname] = val; 
-            console.log(fieldname, val)       
+            body[fieldname] = val;        
         });
 
         busboy.on('file', async (fieldname, file, filename, encoding, mimetype) => {
@@ -177,11 +180,31 @@ export class ProjectsService {
         });
 
         busboy.on('finish', async () => {
-            const { name, description, time,  projectId, users } = body;
+            const { name, description, time, users } = body;
             const mission = { name, description, time ,picture: fileNameToUpload, projectId, users: JSON.parse(users) };
             const response = await this.projectRepository.createMission(mission);
             res.status(201).send(response);
         })
         return req.pipe(busboy);
+    }
+
+    async getprojectsFilter(title: string, category: string) {
+        return this.projectRepository.findProjectsWithFilters({ title, category });
+    }
+
+    async isPartner(curentUserId: string, partnerId: string) {
+        return this.projectRepository.isPartner(curentUserId, partnerId);
+    }
+
+    async isAdmin(curentUserId: string, projectId:string) {
+        return this.projectRepository.isAdmin(curentUserId, projectId);
+    }
+
+    async isOwner(curentUserId: string, projectId:string) {
+        return this.projectRepository.isOwner(curentUserId, projectId);
+    }
+
+    async invite(projectId: string, userId: string, role: string, messageInvitation: string) {
+        return this.projectRepository.invite(projectId, userId, role, messageInvitation);
     }
 }

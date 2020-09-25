@@ -8,7 +8,10 @@ interface Auth {
     login: Function;
     logout: Function;
     isLogged: boolean;
-    /* register: Function; */
+    isAPartner: (userId: string) => Promise<boolean>;
+    isAAdmin: (projectId: string) => Promise<boolean>;
+    isAOwner: (projectId: string) => Promise<boolean>;
+    isAssigned: (missionId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext({} as Auth);
@@ -16,7 +19,7 @@ const AuthContext = createContext({} as Auth);
 
 export const AuthProvider: FC = ({ children }) => {
     const token = useToken();
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
     const api = useApi();
     
     // code for pre-loading the user's information if we have their token in
@@ -34,8 +37,10 @@ export const AuthProvider: FC = ({ children }) => {
     useEffect(() => {
         if (token) {
             setIsLogged(true);
+        } else {
+            setIsLogged(false);
         }
-    }, [])
+    }, [token])
     const login = async (email: string, password: string): Promise<void> => {
         try {
             const response = await api.post('/auth/login', {
@@ -55,14 +60,48 @@ export const AuthProvider: FC = ({ children }) => {
     // const register = () => {} // register the user
     const logout = () => {
         dispatch(clearToken());
-        setIsLogged(false);
     } // clear the token in localStorage and the user data
     // note, I'm not bothering to optimize this `value` with React.useMemo here
     // because this is the top-most component rendered in our app and it will very
     // rarely re-render/cause a performance problem.
 
+    const isAPartner = async (userId: string) => {
+        try {
+            const response = await api.get('/auth/isPartner/' + userId);
+            return response.data as boolean;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    const isAAdmin = async (projectId: string) => {
+        try {
+            const response = await api.get('/auth/isAAdmin/' + projectId);
+            return response.data as boolean;
+        } catch (err) {
+            return false;
+        }
+    }
+    const isAOwner = async (projectId: string) => {
+        try {
+            const response = await api.get('/auth/isAOwner/' + projectId);
+            return response.data as boolean;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    const isAssigned = async (missionId: string) => {
+        try {
+            const response = await api.get('/auth/isAssigned/' + missionId);
+            return response.data as boolean;
+        } catch (err) {
+            return false;
+        }
+    }
+
     return (
-        <AuthContext.Provider value={{/* data, */ login, logout, isLogged/* , register */}} >{children}</AuthContext.Provider>
+        <AuthContext.Provider value={{login, logout, isLogged, isAPartner, isAAdmin, isAOwner, isAssigned}} >{children}</AuthContext.Provider>
     )
   }
   // const useAuth = () => React.useContext(AuthContext)

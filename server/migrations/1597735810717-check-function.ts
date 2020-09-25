@@ -11,7 +11,7 @@ export class checkFunction1597735810717 implements MigrationInterface {
         $$
         DECLARE solution VARCHAR(5); 
         BEGIN
-            IF myUserId IN (SELECT "userId" FROM "user_project" WHERE "projectId" IN (SELECT "projectId" FROM mission WHERE mission.id = myMissionId ))
+            IF myUserId IN (SELECT "userId" FROM "user_project" WHERE demande = TRUE AND invitation = TRUE AND "projectId" IN (SELECT "projectId" FROM mission WHERE mission.id = myMissionId ))
             THEN solution = 'True';
             ELSE solution = 'False';
             END IF;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, UnsupportedMediaTypeException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnsupportedMediaTypeException, Inject, forwardRef } from '@nestjs/common';
 import { UserRepository } from "./users.repository";
 import { User } from "./users.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -14,7 +14,8 @@ import { StatusEnum as StatusEnumUser } from "./enums/statusEnum";
 import { StatusEnum as StatusEnumProject } from "../projects/enums/statusEnum";
 import transport from "../config/nodemailer.config";
 import { Project } from '../projects/projects.entity';
-import multer from "multer";
+import { AuthService } from "../auth/auth.service";
+import { JwtService } from '@nestjs/jwt';
 
 interface UserToSend extends User {
     projects: Project[]
@@ -26,6 +27,7 @@ export class UsersService {
     constructor(
         @InjectRepository(UserRepository)
         private userRepository: UserRepository,
+        private jwtService: JwtService
     ) {}
 
 
@@ -36,6 +38,7 @@ export class UsersService {
     async findByEmail(email: string): Promise<User> {
         const found = await this.userRepository.findOne({
             email,
+            status: StatusEnumUser.ENABLED
         });
 
         if (!found) {
@@ -46,14 +49,37 @@ export class UsersService {
     }
 
     async findUserById(id: string) {
-        const found: UserToSend = await this.userRepository.findUserById(id) as UserToSend;
-        if (!found) {
+        const firstSearch: UserToSend = await this.userRepository.findUserById(id) as UserToSend;
+        const secondeSearch = await this.userRepository.findUserByIdSeconde(id);
+        const finalSearch = await this.userRepository.findUserByIdFinal(id);
+        
+        const found = firstSearch ? { ...firstSearch, projects: firstSearch.projectUser.filter(projectUser => projectUser.project.status === StatusEnumProject.ENABLED).map(projectUser => projectUser.project) } :
+        ( secondeSearch ? { ...secondeSearch, projects: [] } : (finalSearch ? { ...finalSearch[0], projects: []} : null));
+
+        if (!found || found.status !== StatusEnumUser.ENABLED) { 
             throw new NotFoundException();
         }
 
-        found.projects = found.projectUser.filter(projectUser => projectUser.project.status === StatusEnumProject.ENABLED).map(projectUser => projectUser.project)
+        const {projectUser, password, status, phone, email, ...payload} = found;
+        
+        return payload;    
+    }
+
+    async getPartnerById(id: string) {
+        const firstSearch: UserToSend = await this.userRepository.findUserById(id) as UserToSend;
+        const secondeSearch = await this.userRepository.findUserByIdSeconde(id);
+        const finalSearch = await this.userRepository.findUserByIdFinal(id);
+        
+        const found = firstSearch ? { ...firstSearch, projects: firstSearch.projectUser.filter(projectUser => projectUser.project.status === StatusEnumProject.ENABLED).map(projectUser => projectUser.project) } :
+        ( secondeSearch ? { ...secondeSearch, projects: [] } : (finalSearch ? { ...finalSearch[0], projects: []} : null));
+
+        if (!found || found.status !== StatusEnumUser.ENABLED) { 
+            throw new NotFoundException();
+        }
+
         const {projectUser, password, status, ...payload} = found;
-        return payload;
+        
+        return payload; 
     }
 
     async findByEmailEnabled(email: string): Promise<User> {
@@ -74,6 +100,7 @@ export class UsersService {
     async findById(id: string): Promise<User> {
         const found = await this.userRepository.findOne({
             id,
+            status: StatusEnumUser.ENABLED
         });
 
         if (!found) {
@@ -186,10 +213,6 @@ export class UsersService {
         return req.pipe(busboy);
     }
 
-    async updateUser(user: UpdateUserDto): Promise<UpdateResult> {
-        return this.userRepository.updateUser(user);
-    }
-
     async createConfirmMail(email: string, token: string) {
         transport.sendMail({
             from: 'ne-pas-repondre@reseau.fr',
@@ -220,5 +243,76 @@ export class UsersService {
         user.status = StatusEnumUser.ENABLED;
         user.confirmToken = null;
         user.save();
+    }
+
+    async getUsersFilter(search: string, job: string) {
+        return this.userRepository.findUsersWithFilters({ search, job });
+    }
+
+    async update(id, req, res): Promise<InsertResult> {
+        const user: User = {} as User;
+        const busboy = new Busboy({ headers: req.headers });
+        let type = null;
+        let fileNameToUpload: null | string = null;
+
+        busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated) => {
+            //add checks for field names and extract those values, for example I am expecting a 
+            //hidden field with name (vehicleId)
+            user[fieldname] = val;
+            type = fieldname;        
+        });
+
+        busboy.on('file', async (fieldname, file, filename, encoding, mimetype) => {
+            const userLoaded: User = { ...user } as User;
+            fileNameToUpload = `${Date.now()}_${filename}`;
+
+            const found = await this.userRepository.findOne({
+                id,
+            });
+
+            if (!found) {
+                res.status(409).send(new ConflictException("User not exist"));
+            }
+   
+            const supportedMimetypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+            const verifyType = supportedMimetypes.includes(mimetype);
+            if (verifyType) {
+                await this.deletePicture(id);
+                const saveTo = './dist-react/image/' + fileNameToUpload;
+                file.pipe(fs.createWriteStream(saveTo));
+                type = 'picture';
+            }
+            file.resume();
+        });
+
+        busboy.on('finish', async () => {
+            const userLoaded: User = user as User;
+            userLoaded.picture = fileNameToUpload;
+
+            const found = await this.userRepository.findOne({
+                id,
+            });
+
+            if (!found) {
+                res.status(409).send(new ConflictException("User not exist"));
+            }
+
+            await this.userRepository.updateUser(id, type, userLoaded);
+            const userUpdated = await this.findById(id);
+            const { password, status,  ...payload } = { ...userUpdated };
+            const response = {token: this.jwtService.sign(payload)}
+            return res.status(201).send(response);
+        });
+
+        return req.pipe(busboy);
+    }
+
+    async deletePicture(id: string) {
+        const user = await this.findById(id);
+        const nameToFileDelete = user.picture;
+
+        if (nameToFileDelete) {
+            fs.unlinkSync('./dist-react/image/' + nameToFileDelete);
+        }
     }
 }

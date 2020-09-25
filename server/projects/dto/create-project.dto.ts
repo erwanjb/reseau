@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNumber, IsString, IsOptional } from "class-validator";
+import { IsEmail, IsEnum, IsNumber, IsString, IsOptional, IsInt } from "class-validator";
 import { StatusEnum } from "../enums/statusEnum";
 
 export class CreateProjectDto {
@@ -13,4 +13,7 @@ export class CreateProjectDto {
 
     @IsString()
     description: string;
+
+    @IsInt()
+    time: number
 }

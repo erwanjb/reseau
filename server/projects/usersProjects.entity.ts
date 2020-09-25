@@ -9,12 +9,15 @@ import {
     ManyToMany,
     JoinTable,
     OneToMany,
+    Check
 } from "typeorm";
 import { User } from "../users/users.entity";
 import { Project } from "./projects.entity";
 import { AdminRoleEnum } from "./enums/adminRoleEnum";
 
 @Entity()
+@Check(` (("demande" = FALSE OR "demande" IS NULL OR "invitation" = FALSE OR "invitation" IS NULL) AND "adminRole" IS NULL)::BOOLEAN IS TRUE OR  ("demande" = TRUE AND "invitation" = TRUE AND "adminRole" IS NOT NULL)::BOOLEAN IS TRUE`)
+@Check('("invitation" = TRUE AND "role" IS NOT NULL)::BOOLEAN IS TRUE OR (("invitation" = FALSE OR "invitation" IS NULL) AND "role" IS NULL)::BOOLEAN IS TRUE')
 export class UserProject extends BaseEntity {
     @PrimaryColumn('uuid') 
     userId: string;
@@ -30,9 +33,21 @@ export class UserProject extends BaseEntity {
     @JoinColumn({ name: "projectId" })
     project: Project;
 
-    @Column()
+    @Column({nullable: true})
+    demande: boolean
+
+    @Column({nullable: true})
+    invitation:boolean
+
+    @Column({ nullable: true, type: 'text'})
+    messageInvitation: string
+
+    @Column({ nullable: true, type: 'text'})
+    messageDemande: string
+
+    @Column({nullable: true})
     role: string;
 
-    @Column({ type: 'enum', enum: AdminRoleEnum})
+    @Column({nullable: true, type: 'enum', enum: AdminRoleEnum})
     adminRole: AdminRoleEnum
 }

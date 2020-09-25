@@ -5,6 +5,7 @@ import { ProjectRepository } from "./projects.repository";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 @Module({
+    exports: [ProjectsService],
     imports: [TypeOrmModule.forFeature([ProjectRepository])],
     controllers: [
         ProjectsController,],

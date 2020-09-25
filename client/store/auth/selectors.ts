@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-interface User {
+export interface User {
     id: string;
     firstName: string;
     lastName: string;
@@ -11,5 +11,9 @@ export const getToken = state => {
 }
 
 export const getUserConnected = state => {
-    return jwt.verify(state.token.token, process.env.JWT_SECRET) as User;
+    try {
+        return jwt.verify(state.token.token, process.env.JWT_SECRET) as User;
+    } catch (err) {
+        return null;
+    }
 }

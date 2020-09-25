@@ -89,7 +89,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.5",
     "ts-node": "^8.10.2",
-    "typeorm": "^0.2.25",
+    "typeorm": "^0.2.26",
     "typescript": "^3.9.5",
     "xoauth2": "^1.2.0"
   }

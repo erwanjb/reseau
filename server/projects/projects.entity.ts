@@ -7,7 +7,8 @@ import {
     ManyToMany,
     JoinTable,
     OneToMany,
-    AfterLoad
+    AfterLoad, 
+    Check
 } from "typeorm";
 import { StatusEnum } from "./enums/statusEnum";
 import { UserProject } from "./usersProjects.entity";
@@ -15,6 +16,7 @@ import { Category } from "./categories.entity";
 import { Mission } from "./mission.entity"
 
 @Entity()
+@Check(`0 <= "time" AND "time" <= 100`)
 export class Project extends BaseEntity {
 
     @PrimaryGeneratedColumn("uuid")
@@ -31,6 +33,9 @@ export class Project extends BaseEntity {
 
     @Column({ type: 'text'})
     description: string;
+
+    @Column({ type: 'integer', })
+    time: number
 
     @OneToMany(() => UserProject, userProject => userProject.project)
     userProject: UserProject[];

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
+import { ProjectsService } from '../projects/projects.service';
 import shA256  from "crypto-js/sha256";
 import { JwtService } from '@nestjs/jwt';
 import { StatusEnum } from "../users/enums/statusEnum";
@@ -11,6 +12,7 @@ import crypto from "crypto-js";
 @Injectable()
 export class AuthService {
     constructor(
+        private projectsService: ProjectsService,
         private usersService: UsersService,
         private jwtService: JwtService
         ) {}

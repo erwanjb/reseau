@@ -16,6 +16,8 @@ import {
 import { useHistory, useParams } from 'react-router-dom';
 import useApi from "../hooks/useApi";
 import NavBar from './NavBar';
+import useAuth from "../hooks/useAuth";
+import { useUserConnected } from "../hooks/useToken";
 
 interface Member {
     name: string;
@@ -30,104 +32,11 @@ interface Mission {
     assignedTo? : Member[];
 }
 
-const members: Member[] = [
-    {
-        name: "John Doe",
-        image: "http://www.pngmart.com/files/12/Boy-Emoji-Avatar-PNG.png",
-        role: "planteur cultivateur"
-    },
-    {
-        name: "Lisa Ford",
-        image: "https://cdn0.iconfinder.com/data/icons/faces-of-girls/1000/_4-512.png",
-        role: "planteur experte analyste"
-    },
-    {
-        name: "Stephanie Foch",
-        image: "https://b7.pngbarn.com/png/961/160/bitstrips-avatar-emoji-avatar-png-clip-art.png",
-        role: "arboriste"
-    }, 
-    {
-        name: "Tedd Jr White",
-        image: "https://steemitimages.com/640x0/http://oi64.tinypic.com/taj9yb.jpg",
-        role: "chef budget"
-    }
-];
-
-/* const missions: Mission[] = [
-    {
-        title: "Production d'engrais de masse",
-        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Flexible_intermediate_bulk_containers-Fertilizer.jpg/800px-Flexible_intermediate_bulk_containers-Fertilizer.jpg",
-        time: "2mois",
-        assignedTo: []
-    }, 
-    {
-        title: "Planter les pousses",
-        image: "https://www.18h39.fr/wp-content/uploads/2018/12/planter-graines-arbres-getty-lovelyday12-1250x550.jpg",
-        time: "2semaines",
-        assignedTo: [
-            {
-                name: "John Doe",
-                image: "http://www.pngmart.com/files/12/Boy-Emoji-Avatar-PNG.png",
-                role: "planteur cultivateur"
-            },
-            {
-                name: "Lisa Ford",
-                image: "https://cdn0.iconfinder.com/data/icons/faces-of-girls/1000/_4-512.png",
-                role: "planteur experte analyste"
-            }
-        ]
-    },
-    {
-        title: "Production d'engrais de masse",
-        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Flexible_intermediate_bulk_containers-Fertilizer.jpg/800px-Flexible_intermediate_bulk_containers-Fertilizer.jpg",
-        time: "2mois",
-        assignedTo: []
-    }, 
-    {
-        title: "Planter les pousses",
-        image: "https://www.18h39.fr/wp-content/uploads/2018/12/planter-graines-arbres-getty-lovelyday12-1250x550.jpg",
-        time: "2semaines",
-        assignedTo: [
-            {
-                name: "John Doe",
-                image: "http://www.pngmart.com/files/12/Boy-Emoji-Avatar-PNG.png",
-                role: "planteur cultivateur"
-            },
-            {
-                name: "Lisa Ford",
-                image: "https://cdn0.iconfinder.com/data/icons/faces-of-girls/1000/_4-512.png",
-                role: "planteur experte analyste"
-            }
-        ]
-    },
-    {
-        title: "Production d'engrais de masse",
-        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Flexible_intermediate_bulk_containers-Fertilizer.jpg/800px-Flexible_intermediate_bulk_containers-Fertilizer.jpg",
-        time: "2mois",
-        assignedTo: []
-    }, 
-    {
-        title: "Planter les pousses",
-        image: "https://www.18h39.fr/wp-content/uploads/2018/12/planter-graines-arbres-getty-lovelyday12-1250x550.jpg",
-        time: "2semaines",
-        assignedTo: [
-            {
-                name: "John Doe",
-                image: "http://www.pngmart.com/files/12/Boy-Emoji-Avatar-PNG.png",
-                role: "planteur cultivateur"
-            },
-            {
-                name: "Lisa Ford",
-                image: "https://cdn0.iconfinder.com/data/icons/faces-of-girls/1000/_4-512.png",
-                role: "planteur experte analyste"
-            }
-        ]
-    }
-]; */
-
 const Project: FC = () => {
     const maxWidth500 = useMediaQuery('(max-width:500px)');
     const maxWidth900 = useMediaQuery('(max-width:900px)');
+    const auth = useAuth();
+    const currentUser = useUserConnected();
 
     const useStyles = makeStyles({
         container: {
@@ -262,13 +171,20 @@ const Project: FC = () => {
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: 3
+        },
+        cat: {
+            display: 'flex',
+            flexWrap: 'wrap'
+        },
+        subCat: {
+            marginRight: 50
         }
     });
 
     const api = useApi();
     const classes = useStyles();
     const history = useHistory();
-    const { id } = useParams();
+    const { id } = useParams() as any;
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -276,19 +192,34 @@ const Project: FC = () => {
     const [categories, setCategories] = useState([]);
     const [users, setUsers] = useState([]);
     const [missions, setMissions] = useState([]);
+    const [time, setTime] = useState(NaN);
+
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isOwner, setIsOwner] = useState(false);
 
     useEffect(() => {
         const start = async () => {
-            const project =  await api.get(`projects/${id}`);
+            const project =  await api.get(`/projects/${id}`);
             setTitle(project.data.title);
             setDescription(project.data.description);
             setPicture(project.data.picture);
             setCategories(project.data.categories);
             setUsers(project.data.users);
             setMissions(project.data.missions);
+            setTime(project.data.time);
         }
         start();
     }, []);
+
+    useEffect(() => {
+        const restart = async () => {
+            const admin = await auth.isAAdmin(id);
+            setIsAdmin(admin);
+            const owner = await auth.isAOwner(id);
+            setIsOwner(owner);
+        }
+        restart();
+    }, [currentUser])
 
     const handleClick = (id) => {
         history.push('/profil/' + id);
@@ -296,6 +227,14 @@ const Project: FC = () => {
 
     const AddMission = () => {
         history.push('/addMission/' + id);
+    }
+
+    const handleInvite = () => {
+        history.push('/inviteMember/' + id);
+    }
+
+    const handleMessaging = () => {
+        history.push('/projectMessaging/' + id);
     }
 
     return (
@@ -315,18 +254,27 @@ const Project: FC = () => {
                                 <Tooltip title={title}>
                                     <Typography className={classes.colorBlue} variant="h2">{title}</Typography>
                                 </Tooltip>
-                                <div>
+                                <div className={classes.cat}>
                                     {categories.map((category, index) => {
                                         return (
+                                            <div className={classes.subCat}>
                                             <Tooltip key={"" + index} title={category.name}>
                                                 <Typography className={classes.colorBlue} variant="h4">{category.name}</Typography>
                                             </Tooltip>
+                                            </div>
                                         );
                                     })
                                     }
                                 </div>
                             </div>
                         </div>
+                        {isAdmin || isOwner ?
+                            <>
+                                <Button variant="outlined" color="primary" onClick={handleInvite}>Inviter des membres</Button> 
+                                <Button variant="outlined" color="primary" onClick={handleMessaging}>Messagerie du projet</Button>
+                            </>
+                        : null
+                        }
                         <div>
                             <Typography className={classes.desc}>
                                {description}
@@ -369,11 +317,11 @@ const Project: FC = () => {
                         <LinearProgress
                             className={classes.progressBar}
                             variant="determinate"
-                            value={35}
+                            value={time}
                         />
-                        <Typography variant="body2" color="textSecondary">35%</Typography>
+                        <Typography variant="body2" color="textSecondary">{time}%</Typography>
                     </div>
-                    <Button variant="outlined" color="primary" onClick={AddMission}>Ajouter une mission</Button>
+                    {isAdmin || isOwner ? <Button variant="outlined" color="primary" onClick={AddMission}>Ajouter une mission</Button> : null}
                     <div>
                         <Typography className={classes.titleMission} variant="h4">Missions à effectuer</Typography>
                         <div className={classes.contentMission}>

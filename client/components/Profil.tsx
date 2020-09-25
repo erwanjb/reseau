@@ -3,48 +3,13 @@ import { Avatar, Typography, Paper, makeStyles, useMediaQuery, Tooltip, Button }
 import { useHistory, useParams } from 'react-router-dom';
 import useApi from "../hooks/useApi";
 import NavBar from "./NavBar";
-
-interface Project {
-    title: string;
-    image: string;
-    description: string;
-}
-
-const hello: Project[] = [
-    {
-        title: 'Pousse des arbres',
-        image: "https://image.freepik.com/photos-gratuite/jeune-arbre-qui-pousse-dans-jardin-lever-du-soleil-jour-terre-concept-eco_34152-1510.jpg",
-        description: "Verdir la planète un chantier d'avenir et de tous les jours"
-    },
-    {
-        title: 'les transports du futurs',
-        image: "https://img-0.journaldunet.com/Xo4dRvF6JTd6f3YE3xhF9mUne_w=/300x/smart/c3456eb235414967a5b1e92b36312f9f/ccmcms-jdn/1885065.jpg",
-        description: "Les nouveaux moteurs de demain sont en action pour vous amenez plus vite, plus loin, dans de bonnes conditions"
-    },
-    {
-        title: 'Un monde plus heureux',
-        image: "https://ds1.static.rtbf.be/article/image/370x208/e/2/0/ad5beebdee26ac02350753e322362c7a-1553107429.jpg",
-        description: "Se battre avec soi même pour atteindre la plénitude peut être un chemin compliqué, mais une fois parcouru l'extase et d'autant plus grande"
-    },
-    {
-        title: 'Pousse des arbres',
-        image: "https://image.freepik.com/photos-gratuite/jeune-arbre-qui-pousse-dans-jardin-lever-du-soleil-jour-terre-concept-eco_34152-1510.jpg",
-        description: "Verdir la planète un chantier d'avenir et de tous les jours"
-    },
-    {
-        title: 'les transports du futurs',
-        image: "https://img-0.journaldunet.com/Xo4dRvF6JTd6f3YE3xhF9mUne_w=/300x/smart/c3456eb235414967a5b1e92b36312f9f/ccmcms-jdn/1885065.jpg",
-        description: "Les nouveaux moteurs de demain sont en action pour vous amenez plus vite, plus loin, dans de bonnes conditions"
-    },
-    {
-        title: 'Un monde plus heureux',
-        image: "https://ds1.static.rtbf.be/article/image/370x208/e/2/0/ad5beebdee26ac02350753e322362c7a-1553107429.jpg",
-        description: "Se battre avec soi même pour atteindre la plénitude peut être un chemin compliqué, mais une fois parcouru l'extase et d'autant plus grande"
-    }
-]
+import useAuth from "../hooks/useAuth";
+import { useUserConnected } from "../hooks/useToken";
 
 const Profil: FC = () => {
-    const { id } = useParams();
+    const currentUser = useUserConnected();
+    const auth = useAuth();
+    const { id } = useParams() as any;
     const api = useApi();
 
     const [firstName, setFirstName] = useState('');
@@ -55,10 +20,11 @@ const Profil: FC = () => {
     const [picture, setPicture] = useState('');
     const [job, setJob] = useState('');
     const [projects, setPojects] = useState([]);
+    const [isPartner, setIsPartner]= useState(false);
 
     useEffect(() => {
         const start = async () => {
-            const user =  await api.get(`users/${id}`);
+            const user = isPartner ? await api.get('/users/partner/' + id) : await api.get('/users/' + id);
             setFirstName(user.data.firstName);
             setLastName(user.data.lastName);
             setEmail(user.data.email);
@@ -67,9 +33,18 @@ const Profil: FC = () => {
             setPicture(user.data.picture);
             setJob(user.data.job);
             setPojects(user.data.projects);
+            const partner = await auth.isAPartner(id);
+            setIsPartner(partner);
         }
         start();
-    }, []);
+    }, [id, isPartner]);
+    useEffect(() => {
+        const restart = async () => {
+            const partner = await auth.isAPartner(id);
+            setIsPartner(partner)
+        }
+        restart();
+    }, [currentUser])
     const history = useHistory();
     const maxWidth900 = useMediaQuery('(max-width:900px)');
     const maxWidth500 = useMediaQuery('(max-width:500px)');
@@ -176,6 +151,10 @@ const Profil: FC = () => {
         history.push('/addProject');
     }
 
+    const handleUpdate = () => {
+        history.push('/updateUser/' + id);
+    }
+
     return (
         <div>
             <NavBar></NavBar>
@@ -197,21 +176,32 @@ const Profil: FC = () => {
                                 </Tooltip>
                             </div>
                         </div>
+                        {currentUser && currentUser.id === id ? <Button variant="outlined" color="primary" onClick={handleUpdate}>Modifier profil</Button> : null }
                         <div>
                             <Typography className={classes.desc}>
                                 {description}
                             </Typography>
-                            <Typography className={classes.acme}>téléphone: {phone}</Typography>
-                            <Typography className={classes.acme}>email: {email}</Typography>
+                            {
+                                isPartner ?
+                                <>
+                                    <Typography className={classes.acme}>téléphone: {phone}</Typography>
+                                    <Typography className={classes.acme}>email: {email}</Typography>
+                                </>
+                                : null
+                            }
                         </div>
                     </div>
                 </div>
                 <div className={classes.mainProject}>
-                    <Typography variant="h5" className={classes.titleProject}>Mes projets</Typography>
-                    <Button
-                        variant="outlined"
-                        onClick={handleCreate}
-                    >Créer un projet</Button>
+                    {currentUser && currentUser.id === id ? 
+                        <Button
+                            className={classes.btn}
+                            variant="outlined"
+                            onClick={handleCreate}
+                            color="primary"
+                        >Créer un projet</Button> : null
+                    }
+                    <Typography variant="h5" className={classes.titleProject}>{currentUser && currentUser.id === id ? "Mes" : "Ses"} Projets</Typography>
                     <div className={classes.contentProject}>
                         {projects.map((project, index) => {
                             return (

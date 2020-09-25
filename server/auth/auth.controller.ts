@@ -1,6 +1,9 @@
-import { Controller, Request, Response, Get, Query, Post, UseGuards, Body } from '@nestjs/common';
+import { Controller, Request, Response, Get, Query, Post, UseGuards, Body, Param, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { IsPartnerGuard } from './isPartner.guard';
+import { IsAdminGuard } from './isAdmin.guard';
+import { IsOwnerGuard } from './isOwner.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +28,25 @@ export class AuthController {
     @Post('/resetPassword')
     resetPassword(@Body() body) {
         return this.authService.resetPassword(body.userId, body.token, body.password);
+    }
+
+   
+    @UseGuards(AuthGuard('jwt'), IsPartnerGuard)
+    @Get('/isPartner/:id')
+    isPartner(@Param('id') id: string, @Req() req) {
+        return true;
+    }
+
+    @UseGuards(AuthGuard('jwt'), IsAdminGuard)
+    @Get('/isAAdmin/:id')
+    isAdmin() {
+        return true;
+    }
+
+    @UseGuards(AuthGuard('jwt'), IsOwnerGuard)
+    @Get('/isAOwner/:id')
+    isOwner() {
+        return true;
     }
 
 }

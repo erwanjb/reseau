@@ -46,7 +46,7 @@ const AddMission: FC = () => {
     })
     const history = useHistory();
     const classes = useStyles();
-    const { projectId } = useParams();
+    const { projectId } = useParams() as any;
     const api = useApi();
     const [users, setUsers] = useState([]);
     const [assigned, setAssigned] = React.useState([]);
@@ -82,12 +82,10 @@ const AddMission: FC = () => {
             formData.append('name', mission.name);
             formData.append('description', mission.description);
             formData.append('time', mission.time);
-            formData.append('projectId', projectId);
-            console.log(mission.picture[0], JSON.stringify(assigned))
             formData.append('users', JSON.stringify(assigned));
 
             formData.append('picture', mission.picture[0]);
-            await api.post('/projects/addMission', formData, {
+            await api.post('/projects/addMission/' + projectId, formData, {
                 headers: {
                     'content-type': 'multipart/form-data'
                 }
