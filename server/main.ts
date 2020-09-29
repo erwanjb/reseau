@@ -28,7 +28,7 @@ async function bootstrap() {
       }
     }
 
-    await app.listen(3000);
+    await app.listen(process.env.NODE_ENV === "production" ? 80 : 3000);
 
     if (module.hot) {
         module.hot.accept();
