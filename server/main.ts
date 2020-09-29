@@ -4,6 +4,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import multer from 'multer';
 import express from "express";
+import history from 'connect-history-api-fallback';
 
 const upload = multer();
 
@@ -19,6 +20,7 @@ async function bootstrap() {
     }
 
     if (process.env.NODE_ENV === "production") {
+      app.use(history());
       app.use('/', express.static('dist-react'));
 
       if (process.env.CLIENT_URL_SECONDE) {
