@@ -19,6 +19,9 @@ export class IsPartnerGuard implements CanActivate {
         if (result.length) {
             return true;
         }
+        if (userId === userPartnerId) {
+            return true;
+        }
         return false;
     }
 }
