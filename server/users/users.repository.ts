@@ -9,6 +9,8 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { GetUsersFilterDto } from "./dto/get-users-filter.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { StatusEnum } from "./enums/statusEnum";
+import { AdminRoleEnum } from '../projects/enums/adminRoleEnum';
+import { UserProject } from '../projects/usersProjects.entity';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -49,7 +51,7 @@ export class UserRepository extends Repository<User> {
         const query = this.createQueryBuilder('user')
         .where("user.id = :id", { id })
         .leftJoinAndSelect('user.projectUser', 'projectUser')
-        .andWhere('(invitation <> TRUE OR demande <> TRUE)')
+        .andWhere('(invitation <> TRUE OR invitation IS NULL OR demande <> TRUE OR demande IS NULL)')
         .leftJoinAndSelect('projectUser.project', 'projects')
         const user = await query.getOne();
         /*
@@ -111,6 +113,102 @@ export class UserRepository extends Repository<User> {
             .getMany();
 
         return users;
+    }
+
+    async messagingProjectNotTreated(userId: string) {
+        return this.createQueryBuilder('user')
+        .where("user.id = :id", { id: userId })
+        .leftJoinAndSelect('user.projectUser', 'projectUser')
+        .leftJoinAndSelect('projectUser.project', 'project')
+        .leftJoinAndSelect('project.categories', 'categories')
+        .andWhere('invitation = TRUE AND demande IS NULL')
+        .getOne();
+    }
+
+    async messagingProjectRefused(userId: string) {
+        return this.createQueryBuilder('user')
+        .where("user.id = :id", { id: userId })
+        .leftJoinAndSelect('user.projectUser', 'projectUser')
+        .leftJoinAndSelect('projectUser.project', 'project')
+        .leftJoinAndSelect('project.categories', 'categories')
+        .andWhere('demande = FALSE')
+        .getOne();
+    }
+
+    async messagingProjectWaiting(userId: string) {
+        return this.createQueryBuilder('user')
+        .where("user.id = :id", { id: userId })
+        .leftJoinAndSelect('user.projectUser', 'projectUser')
+        .leftJoinAndSelect('projectUser.project', 'project')
+        .leftJoinAndSelect('project.categories', 'categories')
+        .andWhere('demande = TRUE AND invitation IS NULL')
+        .getOne();
+    }
+
+    async messagingProjectInvitedRefused(userId: string) {
+        return this.createQueryBuilder('user')
+        .where("user.id = :id", { id: userId })
+        .leftJoinAndSelect('user.projectUser', 'projectUser')
+        .leftJoinAndSelect('projectUser.project', 'project')
+        .leftJoinAndSelect('project.categories', 'categories')
+        .andWhere('demande = TRUE AND invitation = FALSE')
+        .getOne();
+    }
+
+    async demande(userId: string, projectId: string,  messageDemande: string) {
+        const found = await this.query(`SELECT * FROM user_project WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`)
+    
+        if (found.length) {
+            if (!found[0].demande) {
+                if (found[0].invitation) {
+                    await this.query(`UPDATE user_project SET demande = TRUE, "messageDemande" = ${messageDemande ? "'" +messageDemande + "'" : null}, "adminRole" = '${AdminRoleEnum.MEMBER}' WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+                } else {
+                    await this.query(`UPDATE user_project SET demande = TRUE, "messageDemande" = ${messageDemande ? "'" +messageDemande + "'"  : null} WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+                }
+                return 'OK';
+            } else {
+                return 'OK';
+            }
+        }
+
+        await this.createQueryBuilder()
+        .insert()
+        .into(UserProject)
+        .values({ userId, projectId,  messageDemande: messageDemande ? messageDemande : null, demande: true })
+        .execute();
+
+        return 'OK';
+    }
+
+    async refuse(userId: string, projectId: string) {
+        const found = await this.query(`SELECT * FROM user_project WHERE demande IS NULL AND invitation = TRUE AND "userId" = '${userId}' AND "projectId" = '${projectId}'`)
+
+        if (found.length) {
+            await this.query(`UPDATE user_project SET demande = FALSE WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+            return 'OK';
+        }
+
+        return 'NO';
+    }
+
+    async redemande(userId: string, projectId: string) {
+        const found = await this.query(`SELECT * FROM user_project WHERE demande = FALSE AND invitation = TRUE AND "userId" = '${userId}' AND "projectId" = '${projectId}'`)
+
+        if (found.length) {
+            await this.query(`UPDATE user_project SET demande = TRUE, "adminRole" = '${AdminRoleEnum.MEMBER}'  WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+            return 'OK';
+        }
+
+        return 'NO';
+    }
+
+    async cancel(userId: string, projectId: string) {
+        const found = await this.query(`SELECT * FROM user_project WHERE invitation IS NULL AND demande = TRUE AND "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+        if (found.length) {
+            await this.query(`DELETE FROM user_project WHERE "userId" = '${userId}' AND "projectId" = '${projectId}'`);
+            return 'OK';
+        }
+        return 'NO';
     }
 
 }

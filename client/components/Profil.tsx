@@ -19,7 +19,7 @@ const Profil: FC = () => {
     const [description, setDescription] = useState('');
     const [picture, setPicture] = useState('');
     const [job, setJob] = useState('');
-    const [projects, setPojects] = useState([]);
+    const [projects, setProjects] = useState([]);
     const [isPartner, setIsPartner]= useState(false);
 
     useEffect(() => {
@@ -32,7 +32,7 @@ const Profil: FC = () => {
             setDescription(user.data.description);
             setPicture(user.data.picture);
             setJob(user.data.job);
-            setPojects(user.data.projects);
+            setProjects(user.data.projects);
             const partner = await auth.isAPartner(id);
             setIsPartner(partner);
         }

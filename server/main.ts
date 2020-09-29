@@ -3,6 +3,7 @@ import { AppModule } from "./app.module";
 import cors from "cors";
 import bodyParser from "body-parser";
 import multer from 'multer';
+import express from "express";
 
 const upload = multer();
 
@@ -10,9 +11,22 @@ declare const module: any;
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    app.use(cors({
-      origin: process.env.CLIENT_URL
-    }));
+
+    if (process.env.NODE_ENV === "development") {
+      app.use(cors({
+        origin: process.env.CLIENT_URL
+      }));
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      app.use('/', express.static('dist-react'));
+
+      if (process.env.CLIENT_URL_SECONDE) {
+        app.use(cors({
+          origin: process.env.CLIENT_URL_SECONDE
+        }));
+      }
+    }
 
     await app.listen(3000);
 

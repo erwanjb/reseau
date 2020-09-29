@@ -7,6 +7,8 @@
     "start-react": "webpack-dev-server --config react.webpack.config.js --open --hot",
     "start-server": "npm run reset-server && webpack --config nest.webpack.config.js",
     "reset-server": "if exist rmdir /s dist-server",
+    "start-prod-server": "npm run reset-prod-server && webpack --config nest.webpack.config.js",
+    "reset-prod-server": "if [ -d dist-server ]; then rm -Rf dist-server; fi",
     "run-server": "node dist-server/server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

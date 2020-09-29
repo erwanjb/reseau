@@ -69,7 +69,7 @@ const AddMission: FC = () => {
           }
         }
         setAssigned(value);
-      };
+    };
 
     const onSubmit = async (mission) => {
         if (errorPicture) {

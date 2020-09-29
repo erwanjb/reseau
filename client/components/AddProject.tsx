@@ -120,12 +120,11 @@ const addProject: FC = () => {
             formData.append('description', project.description);
             formData.append('role', project.role);
             formData.append('categories', JSON.stringify(categories));
-            formData.append('userId', user.id);
             formData.append('time', time.toString());
             
             formData.append('picture', project.picture[0]);
             try {
-                await api.post('projects', formData, {
+                await api.post('/projects/' + user.id, formData, {
                     headers: {
                         'content-type': 'multipart/form-data'
                     }

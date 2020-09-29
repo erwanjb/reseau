@@ -92,7 +92,7 @@ const Home: FC = () => {
         },
         member: {
             width: 150,
-            height: 100,
+            height: 150,
             minHeight: 100,
             padding: 20,
             '&:hover': {
@@ -101,7 +101,7 @@ const Home: FC = () => {
         },
         project: {
             width: 240,
-            height: 100,
+            height: 150,
             minHeight: 100,
             padding: 20,
             '&:hover': {
@@ -128,7 +128,12 @@ const Home: FC = () => {
             display: 'flex'
         },
         cat: {
-            marginRight: 10
+            overflow: "hidden",
+            width: '100%',
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 1,
+            marginBottom: 30
         }
     });
 
@@ -211,7 +216,12 @@ const Home: FC = () => {
                                                 <Typography className={classes.memberTitle}>{member.firstName +  ' ' + member.lastName}</Typography>
                                             </Tooltip>
                                         </div>
-                                        <Typography>{member.job}</Typography>
+                                        <Tooltip title={member.job}>
+                                            <Typography className={classes.cat}>{member.job}</Typography>
+                                        </Tooltip>
+                                        <Tooltip title={member.description}>
+                                            <Typography className={classes.notLongText}>{member.description}</Typography>
+                                        </Tooltip>
                                     </Paper>
                                 </a>
                             );
@@ -238,14 +248,11 @@ const Home: FC = () => {
                                             </Tooltip>
                                         </div>
                                         <div className={classes.projetCat}>
-                                            {project.categories.split(',').map((category, index) => {
-                                                return (
-                                                    <div className={classes.cat} key={""+ index}>
-                                                        <Tooltip title={category}>
-                                                            <Typography>{category}</Typography>
-                                                        </Tooltip>
-                                                    </div>);
-                                            })}
+                                            <div className={classes.cat}>
+                                                <Tooltip title={project.categories.split(',').join(', ')}>
+                                                    <Typography>{project.categories.split(',').join(', ')}</Typography>
+                                                </Tooltip>
+                                            </div>
                                         </div>
                                         <Tooltip title={project.description}>
                                             <Typography className={classes.notLongText}>{project.description}</Typography>

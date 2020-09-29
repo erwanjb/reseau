@@ -52,7 +52,6 @@ export class UsersService {
         const firstSearch: UserToSend = await this.userRepository.findUserById(id) as UserToSend;
         const secondeSearch = await this.userRepository.findUserByIdSeconde(id);
         const finalSearch = await this.userRepository.findUserByIdFinal(id);
-        
         const found = firstSearch ? { ...firstSearch, projects: firstSearch.projectUser.filter(projectUser => projectUser.project.status === StatusEnumProject.ENABLED).map(projectUser => projectUser.project) } :
         ( secondeSearch ? { ...secondeSearch, projects: [] } : (finalSearch ? { ...finalSearch[0], projects: []} : null));
 
@@ -237,14 +236,6 @@ export class UsersService {
         return found;
     }
 
-    async enabled(id: string) {
-        const user = await this.findById(id);
-
-        user.status = StatusEnumUser.ENABLED;
-        user.confirmToken = null;
-        user.save();
-    }
-
     async getUsersFilter(search: string, job: string) {
         return this.userRepository.findUsersWithFilters({ search, job });
     }
@@ -314,5 +305,46 @@ export class UsersService {
         if (nameToFileDelete) {
             fs.unlinkSync('./dist-react/image/' + nameToFileDelete);
         }
+    }
+
+    async messaging(userId: string) {
+        const projectNotTreated = await this.userRepository.messagingProjectNotTreated(userId);
+        const projectRefused = await this.userRepository.messagingProjectRefused(userId);
+        const projectInvitedWaiting = await this.userRepository.messagingProjectWaiting(userId);
+        const projectInvitedRefused = await this.userRepository.messagingProjectInvitedRefused(userId);
+        return {
+            projectNotTreated: projectNotTreated ? projectNotTreated.projectUser.filter(projUser => projUser.project.status === StatusEnumProject.ENABLED).map(projUser => {
+                const project = projUser.project;
+                return {...project, messageInvitation: projUser.messageInvitation};
+            }) : [],
+            projectRefused: projectRefused ? projectRefused.projectUser.filter(projUser => projUser.project.status === StatusEnumProject.ENABLED).map(projUser => {
+                const project = projUser.project;
+                return project;
+            }) : [],
+            projectInvitedWaiting: projectInvitedWaiting ? projectInvitedWaiting.projectUser.filter(projUser => projUser.project.status === StatusEnumProject.ENABLED).map(projUser => {
+                const project = projUser.project;
+                return {...project, messageDemande: projUser.messageDemande};
+            }) : [],
+            projectInvitedRefused: projectInvitedRefused ? projectInvitedRefused.projectUser.filter(projUser => projUser.project.status === StatusEnumProject.ENABLED).map(projUser => {
+                const project = projUser.project;
+                return project;
+            }) : [],
+        }
+    }
+
+    async demande(userId: string, projectId: string, messageDemande: string) {
+        return this.userRepository.demande(userId, projectId, messageDemande);
+    }
+
+    async refuse(userId: string, projectId: string) {
+        return this.userRepository.refuse(userId, projectId);
+    }
+
+    async redemande(userId: string, projectId: string) {
+        return this.userRepository.redemande(userId, projectId);
+    }
+
+    async cancel(userId: string, projectId: string) {
+        return this.userRepository.cancel(userId, projectId);
     }
 }

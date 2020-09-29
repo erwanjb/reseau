@@ -11,13 +11,18 @@ import {
     CardMedia,
     Paper,
     Tooltip,
-    Button
+    Button,
+    Modal,
+    TextField,
+    IconButton
 } from '@material-ui/core';
 import { useHistory, useParams } from 'react-router-dom';
 import useApi from "../hooks/useApi";
 import NavBar from './NavBar';
 import useAuth from "../hooks/useAuth";
 import { useUserConnected } from "../hooks/useToken";
+import { useForm } from "react-hook-form";
+import { MoreVert as MoreVertIcon } from '@material-ui/icons';
 
 interface Member {
     name: string;
@@ -178,6 +183,29 @@ const Project: FC = () => {
         },
         subCat: {
             marginRight: 50
+        },
+        modal: {
+            backgroundColor: '#fff',
+            width: 300,
+            height: 300,
+            position: "absolute",
+            top: 'calc(50vh - 150px)',
+            left: 'calc(50% - 150px)',
+        },
+        titleModal: {
+            marginLeft: 30,
+            marginTop: 30,
+            marginRight: 30,
+            color: '#05647A'
+        },
+        message: {
+            marginLeft: 30,
+            marginTop: 30,
+            marginRight: 30,
+        },
+        btnModal: {
+            marginTop: 30,
+            marginLeft: 30,
         }
     });
 
@@ -196,6 +224,8 @@ const Project: FC = () => {
 
     const [isAdmin, setIsAdmin] = useState(false);
     const [isOwner, setIsOwner] = useState(false);
+    const [isNotUserTreated, setIsNotUserTreated] = useState(false);
+    const [reload, setReload] = useState(false);
 
     useEffect(() => {
         const start = async () => {
@@ -209,7 +239,22 @@ const Project: FC = () => {
             setTime(project.data.time);
         }
         start();
-    }, []);
+    }, [reload]);
+
+    const [isAssigned, setIsAssigned] = useState({} as any);
+    console.log(isAssigned)
+    useEffect(() => {
+        const start = async () => {
+            const accumulator = {};
+            setIsAssigned({});
+            missions.map(async miss => {
+                const newId = await auth.isAssigned(miss.id)
+                accumulator[miss.id] = newId;
+                setIsAssigned({...accumulator, [miss.id]: newId})
+            })
+        }
+        start();
+    }, [missions, currentUser]);
 
     useEffect(() => {
         const restart = async () => {
@@ -217,9 +262,11 @@ const Project: FC = () => {
             setIsAdmin(admin);
             const owner = await auth.isAOwner(id);
             setIsOwner(owner);
+            const notUserTreated = await auth.isNotAUserTreated(id);
+            setIsNotUserTreated(notUserTreated); 
         }
         restart();
-    }, [currentUser])
+    }, [currentUser, reload])
 
     const handleClick = (id) => {
         history.push('/profil/' + id);
@@ -236,6 +283,38 @@ const Project: FC = () => {
     const handleMessaging = () => {
         history.push('/projectMessaging/' + id);
     }
+
+    const onsubmit = async ({messageDemande}) => {
+        await api.post('/users/demande/' + id, {
+            messageDemande
+        });
+        setReload(!reload);
+        setOpen(false);
+    }
+
+    const [open, setOpen] = useState(false);
+
+    const handleOpen = () => {
+        setOpen(true);
+    }
+
+    const handleClose = () => {
+        setOpen(false);
+    }
+
+    const handleUpdate = () => {
+        history.push('/updateProject/' + id);
+    }
+
+    const handleUpdateMission = (id) => {
+        history.push('/updateMission/' + id);
+    }
+
+    const handleManage = () => {
+        history.push('/manageMember/' + id);
+    }
+
+    const { register, handleSubmit, errors, setError, clearErrors } = useForm();
 
     return (
         <div>
@@ -272,8 +351,18 @@ const Project: FC = () => {
                             <>
                                 <Button variant="outlined" color="primary" onClick={handleInvite}>Inviter des membres</Button> 
                                 <Button variant="outlined" color="primary" onClick={handleMessaging}>Messagerie du projet</Button>
+                                <Button variant="outlined" color="primary" onClick={handleManage}>Gérer les membres</Button>
                             </>
                         : null
+                        }
+                        {
+                            isOwner ?
+                                    <Button variant="outlined" color="primary" onClick={handleUpdate}>Modifier le projet</Button>
+                            : null
+                        }
+                        {isNotUserTreated ?
+                            <Button variant="outlined" color="primary" onClick={handleOpen}>Demander à rejoindre le projet</Button>
+                        : null    
                         }
                         <div>
                             <Typography className={classes.desc}>
@@ -334,6 +423,14 @@ const Project: FC = () => {
                                                     <Typography className={classes.titleCard}>{mission.name}</Typography>
                                                 </Tooltip>
                                             }
+                                            action={ isOwner || isAdmin || isAssigned[mission.id] ?
+                                                <IconButton aria-label="settings"
+                                                    onClick={handleUpdateMission.bind(null, mission.id)}
+                                                >
+                                                  <MoreVertIcon />
+                                                </IconButton>
+                                                : null
+                                            }
                                         />
                                         <CardMedia
                                             className={classes.media}
@@ -367,6 +464,26 @@ const Project: FC = () => {
                     </div>
                 </div>
             </div>
+            <Modal
+                open={open}
+                onClose={handleClose}
+            >
+                <div className={classes.modal}>
+                    <Typography className={classes.titleModal}>Envoyer une demande pour rejoindre le projet</Typography>
+                    <form onSubmit={handleSubmit(onsubmit)}>
+                        <TextField
+                            className={classes.message}
+                            name="messageDemande"
+                            multiline
+                            label={<Typography>Message de demande</Typography>}
+                            inputRef={register()}
+                            rows={4}
+                            variant="outlined"
+                        />
+                        <Button type="submit" className={classes.btnModal} variant="outlined" color="primary">Envoyer</Button>
+                    </form>
+                </div>
+            </Modal>
         </div>
     );
 };

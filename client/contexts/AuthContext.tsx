@@ -5,6 +5,7 @@ import { setToken, clearToken } from "../store/auth/actions";
 import useToken from "../hooks/useToken";
 
 interface Auth {
+    verifyToken: () => Promise<boolean>
     login: Function;
     logout: Function;
     isLogged: boolean;
@@ -12,6 +13,7 @@ interface Auth {
     isAAdmin: (projectId: string) => Promise<boolean>;
     isAOwner: (projectId: string) => Promise<boolean>;
     isAssigned: (missionId: string) => Promise<boolean>;
+    isNotAUserTreated: (projectId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext({} as Auth);
@@ -33,14 +35,21 @@ export const AuthProvider: FC = ({ children }) => {
       return <FullPageSpinner />
     } */
 
-    const [isLogged, setIsLogged]  = useState(false);
+    const [isLogged, setIsLogged]  = useState(true);
     useEffect(() => {
-        if (token) {
-            setIsLogged(true);
-        } else {
-            setIsLogged(false);
-        }
+        verifyToken();
     }, [token])
+
+    const verifyToken = async () => {
+        if (token) {
+            await setIsLogged(true);
+            return true;
+        } else {
+            await setIsLogged(false);
+            return false;
+        }
+    }
+
     const login = async (email: string, password: string): Promise<void> => {
         try {
             const response = await api.post('/auth/login', {
@@ -100,8 +109,17 @@ export const AuthProvider: FC = ({ children }) => {
         }
     }
 
+    const isNotAUserTreated = async (projectId: string) => {
+        try {
+            const response = await api.get('/auth/isNotAUserTreated/' + projectId);
+            return response.data as boolean;
+        } catch (err) {
+            return false;
+        }
+    }
+
     return (
-        <AuthContext.Provider value={{login, logout, isLogged, isAPartner, isAAdmin, isAOwner, isAssigned}} >{children}</AuthContext.Provider>
+        <AuthContext.Provider value={{verifyToken, login, logout, isLogged, isAPartner, isAAdmin, isAOwner, isAssigned, isNotAUserTreated}} >{children}</AuthContext.Provider>
     )
   }
   // const useAuth = () => React.useContext(AuthContext)

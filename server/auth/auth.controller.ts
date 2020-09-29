@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { IsPartnerGuard } from './isPartner.guard';
 import { IsAdminGuard } from './isAdmin.guard';
 import { IsOwnerGuard } from './isOwner.guard';
+import { IsNotAUserTreatedGuard } from './isNotAUserTreated.guard';
+import { IsAssignedGuard } from './isAssigned.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -17,7 +19,8 @@ export class AuthController {
 
     @Get('/confirmToken')
     confirmToken(@Query('token') token, @Response() res) {
-        return this.authService.confirmToken(token, res);
+        console.log(token)
+        this.authService.confirmToken(token, res);
     }
 
     @Post('/sendResetPassword')
@@ -46,6 +49,18 @@ export class AuthController {
     @UseGuards(AuthGuard('jwt'), IsOwnerGuard)
     @Get('/isAOwner/:id')
     isOwner() {
+        return true;
+    }
+
+    @UseGuards(AuthGuard('jwt'), IsNotAUserTreatedGuard)
+    @Get('/isNotAUserTreated/:id')
+    isNotAUserTreated() {
+        return true;
+    }
+
+    @UseGuards(AuthGuard('jwt'), IsAssignedGuard)
+    @Get('/isAssigned/:id')
+    isAssigned() {
         return true;
     }
 

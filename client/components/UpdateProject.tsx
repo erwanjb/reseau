@@ -1,5 +1,5 @@
 import React, { FC, useCallback, useState, useEffect } from 'react';
-import { Paper, Typography, TextField, Button, makeStyles, FormHelperText, Avatar, Popover, Accordion, AccordionDetails, AccordionSummary } from "@material-ui/core";
+import { Paper, Typography, TextField, Button, makeStyles, FormHelperText, Avatar, Popover, Accordion, AccordionDetails, AccordionSummary, Slider, Chip } from "@material-ui/core";
 import {DesktopWindows, ExpandMore as ExpandMoreIcon} from '@material-ui/icons';
 import { useForm } from "react-hook-form";
 import { useDropzone } from 'react-dropzone';
@@ -8,32 +8,27 @@ import NavBar from "./NavBar";
 import { useHistory, useParams } from 'react-router-dom';
 import { setToken } from "../store/auth/actions"
 import { useDispatch } from "react-redux";
+import { Autocomplete } from '@material-ui/lab';
 
-const UpdateUser: FC = () => {
+const UpdateProject: FC = () => {
     const dispatch = useDispatch();
-    const { id } = useParams() as any;
+    const { projectId } = useParams() as any;
     const api = useApi();
 
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [title, setTitle] = useState('');
+    const [categories, setCategories] = useState([]);
     const [description, setDescription] = useState('');
     const [picture, setPicture] = useState('');
-    const [job, setJob] = useState('');
-    const [projects, setPojects] = useState([]);
+    const [time, setTime] = useState(0);
 
     useEffect(() => {
         const start = async () => {
-            const user =  await api.get(`users/${id}`);
-            setFirstName(user.data.firstName);
-            setLastName(user.data.lastName);
-            setEmail(user.data.email);
-            setPhone(user.data.phone);
-            setDescription(user.data.description);
-            setPicture(user.data.picture);
-            setJob(user.data.job);
-            setPojects(user.data.projects);
+            const project =  await api.get(`/projects/${projectId}`);
+            setTitle(project.data.title);
+            setCategories(project.data.categories.map(cat => cat.name));
+            setTime(project.data.time);
+            setDescription(project.data.description);
+            setPicture(project.data.picture);
         }
         start();
     }, []);
@@ -84,13 +79,19 @@ const UpdateUser: FC = () => {
         popoverRed: {
             backgroundColor: '#f44336',
             color: '#fff'
-        }
+        },
+        marginTop50: {
+            marginTop: 50
+        },
+        auto: {
+            marginTop: 20,
+        },
     })
 
     const history = useHistory();
     const classes = useStyles();
 
-    const { register, handleSubmit, errors, setError } = useForm();
+    const { register, handleSubmit, errors, setError, clearErrors } = useForm();
 
     const onDrop = useCallback(acceptedFiles => {
         setNamePicture(acceptedFiles[0].name);
@@ -111,27 +112,34 @@ const UpdateUser: FC = () => {
     
     const { getRootProps, getInputProps, isDragActive } = useDropzone({onDrop});
     const onSubmit = async (type, toChange) => {
-        if (errorPicture) {
+        if (type === 'picture' && errorPicture) {
             setError('picture', {
                 type: "image",
                 message: "Mettre une image"
             });
+        } else if (type === 'categories' && !newCategories.length) {
+            setError('categories', {
+                type: "catégorie",
+                message: "Mettre au moins une catégorie"
+            })
         }  else {
 
             const formData = new FormData();
-            if (type !== 'picture') {
-                formData.append(type, toChange[type]);
-            } else {
+            if (type === 'picture') {
                 formData.append('picture', toChange[type][0]);
+            } else if (type === 'categories') {
+                formData.append('categories', JSON.stringify(newCategories));
+            } else if (type === 'time') {
+                formData.append('time', newTime.toString());
+            } else {
+                formData.append(type, toChange[type]);
             }
             try {
-                const response = await api.put('users/' + id, formData, {
+                await api.put('/projects/' + projectId, formData, {
                     headers: {
                         'content-type': 'multipart/form-data'
                     }
                 });
-                const token = response.data.token;
-                dispatch(setToken(token));
                 setOpen(true);
                 setPopoverStatus(201);
                 window.location.reload();
@@ -150,11 +158,63 @@ const UpdateUser: FC = () => {
     const [open, setOpen] = useState(false);
     const [popoverStatus, setPopoverStatus] = useState(0);
     
+    const [newTime, setNewTime] = useState(0);
+    const [newCategories, setNewCategories] = useState([]);
+
     const handleClose = () => {
         setOpen(false);
     };
+
+    const onChange = (event, value) => {
+        setNewTime(value);
+    }
+
+    const addCategory = (event) => {
+        const cat = [...newCategories];
+        if (event.target.value && !newCategories.find(categ => categ === event.target.value)){
+            setNewCategories([...cat, event.target.value]);
+            clearErrors('categories');
+        }
+    }
+
+    const onDelete = (event) => {
+        const newCat = [...newCategories];
+        let index;
+        if (event.target.parentNode.tagName === 'DIV') {
+            index = categories.indexOf(event.target.parentNode.querySelector('span').innerHTML);
+        } else {
+            index = categories.indexOf(event.target.parentNode.parentNode.querySelector('span').innerHTML);
+        }
+        newCat.splice(index, 1);
+        setNewCategories(newCat);
+    }
+
+    const onKeyUp = (event: React.FocusEvent<HTMLInputElement>) => {
+        addCategory(event);
+    }
+
+    useEffect(() => {
+        window.addEventListener('keypress', (event: any) => {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                event.target.blur();
+            }
+        })
+        window.addEventListener('submit', (event: any) => {
+            event.preventDefault();
+            if (categories.length) {
+                event.target.submit = (event) =>  { event.preventDefault(); }
+                event.target.submit();
+            }
+            return false;
+        })
+    }, [categories])
     
     const idPopover = open ? 'simple-popover' : undefined;
+
+    const handleProject = () => {
+        history.push('/project/' + projectId);
+    }
 
     return (
         <div>
@@ -162,26 +222,27 @@ const UpdateUser: FC = () => {
             <div className={classes.body}>
                 <Paper
                     className={classes.content}
-                >
-                    <Typography>Modifier son profil</Typography>
+                >   
+                    <Button variant="outlined" color="primary" onClick={handleProject}>Retour au project</Button>
+                    <Typography>Modifier le projet</Typography>
                     <Accordion>
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
                         >
-                            <Typography>Prénom</Typography>
+                            <Typography>Titre du projet</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'firstName'))}>
-                                <Typography>Ancien prénom : {firstName}</Typography>
+                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'title'))}>
+                                <Typography>Ancien titre : {title}</Typography>
                                 <TextField
                                     className={classes.field}
-                                    name="firstName"
-                                    label={<Typography>Prénom</Typography>}
+                                    name="title"
+                                    label={<Typography>Titre du projet</Typography>}
                                     inputRef={register()}
-                                    error={errors.firstName}
-                                    helperText={errors.firstName ? <Typography>Le prénom est obligatoire</Typography> : null}
+                                    error={errors.title}
+                                    helperText={errors.title ? <Typography>Le titre est obligatoire</Typography> : null}
                                 />
-                                <Button type="submit" variant="outlined" color="primary">Changer prénom</Button>
+                                <Button type="submit" variant="outlined" color="primary">Changer titre</Button>
                             </form>
                         </AccordionDetails>
                     </Accordion>
@@ -189,20 +250,13 @@ const UpdateUser: FC = () => {
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
                         >
-                            <Typography>Nom</Typography>
+                            <Typography>Avancée du projet</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'lastName'))}>
-                                <Typography>Ancien nom : {lastName}</Typography>
-                                <TextField
-                                    className={classes.field}
-                                    name="lastName"
-                                    label={<Typography>Nom</Typography>}
-                                    inputRef={register()}
-                                    error={errors.lastName}
-                                    helperText={errors.lastName ? <Typography>Le nom est obligatoire</Typography> : null}
-                                />
-                                <Button type="submit" variant="outlined" color="primary">Changer nom</Button>
+                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'time'))}>
+                                <Typography>Ancienne avancée (en %) : {time} %</Typography>
+                                <Slider className={classes.marginTop50} defaultValue={newTime} valueLabelDisplay="on" onChange={onChange} />
+                                <Button type="submit" variant="outlined" color="primary">Changer l'avancée</Button>
                             </form>
                         </AccordionDetails>
                     </Accordion>
@@ -210,65 +264,34 @@ const UpdateUser: FC = () => {
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
                         >
-                            <Typography>Poste professionel</Typography>
+                            <Typography>Catégories</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'job'))}>
-                                <Typography>Ancien post : {job}</Typography>
-                                <TextField
-                                    className={classes.field}
-                                    name="job"
-                                    label={<Typography>Poste professionnel</Typography>}
-                                    inputRef={register()}
-                                    error={errors.job}
-                                    helperText={errors.job ? <Typography>Le poste est obligatoire</Typography> : null}
+                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'categories'))}>
+                                <Typography>Anciennes catégories: {categories.join(', ')}</Typography>
+                                <Autocomplete
+                                    className={classes.auto}
+                                    multiple
+                                    id="tags-standard"
+                                    noOptionsText="Pas de catégorie"
+                                    options={newCategories}
+                                    getOptionLabel={(option) => option}
+                                    value={newCategories}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="standard"
+                                            label="Catégories du projet"
+                                            placeholder="Catégories"
+                                            onBlur={onKeyUp}
+                                        />
+                                        )}
+                                    renderTags={(value, getTagProps) => <>{value.map((val, ind) =><Chip key={''+ind} label={val} onDelete={onDelete} />)}</>}
                                 />
-                                <Button type="submit" variant="outlined" color="primary">Changer poste</Button>
+                                {errors.categories ? <FormHelperText className={classes.red}>Ajouter au moins une catégorie</FormHelperText> : null}
+                                <Button type="submit" variant="outlined" color="primary">Changer catégories</Button>
                             </form>
-                        </AccordionDetails>
-                    </Accordion>
-                    <Accordion>
-                        <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
-                        >
-                            <Typography>Téléphone</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'phone'))}>
-                                <Typography>Ancien téléphone : {phone}</Typography>
-                                <TextField
-                                    className={classes.field}
-                                    name="phone"
-                                    type="tel"
-                                    label={<Typography>Téléphone</Typography>}
-                                    inputRef={register({ pattern:/^[0-9]{10}$/ })}
-                                    error={errors.phone}
-                                    helperText={errors.phone ? <Typography>Le téléphone est obligatoire, format 10 chiffres</Typography> : null}
-                                />
-                                <Button type="submit" variant="outlined" color="primary">Changer téléphone</Button>
-                            </form>
-                        </AccordionDetails>
-                    </Accordion>
-                    <Accordion>
-                        <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
-                        >
-                            <Typography>Email</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <form onSubmit={handleSubmit(onSubmit.bind(null, 'email'))}>
-                                <Typography>Ancien email (change aussi votre identifiant) : {email}</Typography>
-                                <TextField
-                                    className={classes.field}
-                                    name="email"
-                                    label={<Typography>Email</Typography>}
-                                    inputRef={register({ pattern:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/ })}
-                                    error={errors.email}
-                                    helperText={errors.email ? <Typography>Le mail est obligatoire en format mail -@-.-</Typography> : null}
-                                />
-                                <Button type="submit" variant="outlined" color="primary">Changer email</Button>
-                            </form>
-                        </AccordionDetails>
+                        </AccordionDetails>               
                     </Accordion>
                     <Accordion>
                         <AccordionSummary
@@ -298,7 +321,7 @@ const UpdateUser: FC = () => {
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
                         >
-                            <Typography>Photo de profil</Typography>
+                            <Typography>Photo du projet</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <form onSubmit={handleSubmit(onSubmit.bind(null, 'picture'))}>
@@ -318,8 +341,8 @@ const UpdateUser: FC = () => {
                                     />
                                     {
                                     isDragActive ?
-                                        <p>Drop votre photo de profil ici</p> :
-                                        <p>Drag 'n' drop votre photo de profil ici</p>
+                                        <p>Drop votre photo du projet ici</p> :
+                                        <p>Drag 'n' drop votre photo du projet ici</p>
                                     }
                                 </div>
                                 {errors.picture ? <FormHelperText className={classes.red}>Veuillez mettre une image</FormHelperText> : null}
@@ -346,4 +369,4 @@ const UpdateUser: FC = () => {
     );
 };
 
-export default UpdateUser;
+export default UpdateProject;

@@ -45,9 +45,14 @@ const Connexion: FC = () => {
         history.push('/addUser');
     }
 
+    const handleHome = () => {
+        history.push('/');
+    }
+
     return (
         <div className={classes.body}>
             <Paper className={classes.content}>
+                <Button onClick={handleHome}>Retour à l'accueil</Button>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <TextField
                         className={classes.field}

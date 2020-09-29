@@ -37,8 +37,10 @@ export class AuthService {
     }
 
     async confirmToken(token: string, res: Response) {
-        const { password, status, ...payload } = await this.usersService.findByToken(token);
-        await this.usersService.enabled(payload.id);
+        const found = await this.usersService.findByToken(token);
+        found.confirmToken = null;
+        found.status = StatusEnum.ENABLED;
+        found.save;
         res.redirect(process.env.CLIENT_URL);
     }
 

@@ -57,6 +57,10 @@ const NavBar: FC = () => {
         history.push('/connexion');
     }
 
+    const handleOpenMessaging = () => {
+        history.push('/messaging');
+    }
+
     return (
         <AppBar position="sticky">
             <Toolbar>
@@ -98,7 +102,7 @@ const NavBar: FC = () => {
                         open={open}
                         onClose={handleClose}
                     >
-                        {user ? <div><MenuItem onClick={handleOpenProfil.bind(null, user.id)}>Profile</MenuItem><MenuItem onClick={handleDeconnexion}>Déconnecter</MenuItem></div> : <MenuItem onClick={handleConnexion}>Se connecter</MenuItem>}
+                        {user ? <div><MenuItem onClick={handleOpenProfil.bind(null, user.id)}>Profil</MenuItem><MenuItem onClick={handleOpenMessaging}>Messagerie</MenuItem><MenuItem onClick={handleDeconnexion}>Déconnecter</MenuItem></div> : <MenuItem onClick={handleConnexion}>Se connecter</MenuItem>}
                     </Menu>
                 </div>
             </Toolbar>
