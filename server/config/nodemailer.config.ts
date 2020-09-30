@@ -1,13 +1,13 @@
-import { google } from "googleapis";
-import  mailer from "nodemailer";
+import mg from 'nodemailer-mailgun-transport';
+import mailer from "nodemailer";
 
-
-const transport = mailer.createTransport({
-    service: "GMAIL",
+const auth = {
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD,
-    },
-});
+      api_key: process.env.MAILGUN_API_KEY,
+      domain: process.env.MAILGUN_DOMAINE
+    }
+}
+
+const transport = mailer.createTransport(mg(auth));
 
 export default transport;
