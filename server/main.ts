@@ -1,12 +1,8 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import cors from "cors";
-import bodyParser from "body-parser";
-import multer from 'multer';
 import express from "express";
 import history from 'connect-history-api-fallback';
-
-const upload = multer();
 
 declare const module: any;
 
@@ -20,9 +16,10 @@ async function bootstrap() {
     }
 
     if (process.env.NODE_ENV === "production") {
-      app.use(history());
+      app.use(history({
+        exclusions: ['/auth/confirmToken/me/token']
+      }));
       app.use('/', express.static('dist-react'));
-      app.use('/auth/confirmToken/me/token', express.static('/'));
 
       if (process.env.CLIENT_URL_SECONDE) {
         app.use(cors({
