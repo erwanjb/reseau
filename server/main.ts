@@ -22,6 +22,7 @@ async function bootstrap() {
     if (process.env.NODE_ENV === "production") {
       app.use(history());
       app.use('/', express.static('dist-react'));
+      app.use('/auth/confirmToken/me/token', express.static('/'));
 
       if (process.env.CLIENT_URL_SECONDE) {
         app.use(cors({
