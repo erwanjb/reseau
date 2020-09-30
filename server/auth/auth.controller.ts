@@ -19,7 +19,6 @@ export class AuthController {
 
     @Get('/confirmToken/me/token')
     confirmToken(@Query('token') token, @Response() res) {
-        console.log(token)
         this.authService.confirmToken(token, res);
     }
 

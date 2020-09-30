@@ -40,7 +40,7 @@ export class AuthService {
         const found = await this.usersService.findByToken(token);
         found.confirmToken = null;
         found.status = StatusEnum.ENABLED;
-        found.save;
+        found.save();
         res.redirect(process.env.CLIENT_URL);
     }
 
