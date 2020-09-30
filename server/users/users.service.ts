@@ -217,7 +217,7 @@ export class UsersService {
             from: 'ne-pas-repondre@reseau.fr',
             to: email,
             subject: 'confirmation de création de compte',
-            html: `Un compte a été créé sur le reseau avec votre adresse mail, si c'est bien vous qui l'avez créé, clickez sur le lien <a href="${process.env.API_URL}/auth/confirmToken?token=${token}">ICI</a>` 
+            html: `Un compte a été créé sur le reseau avec votre adresse mail, si c'est bien vous qui l'avez créé, clickez sur le lien <a href="${process.env.API_URL}/auth/confirmToken/me?token=${token}">ICI</a>` 
         })
     }
 
