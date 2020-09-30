@@ -213,7 +213,8 @@ export class UsersService {
     }
 
     async createConfirmMail(email: string, token: string) {
-        transport.sendMail({
+        const newTransport = await transport();
+        newTransport.sendMail({
             from: 'ne-pas-repondre@reseau.fr',
             to: email,
             subject: 'confirmation de création de compte',

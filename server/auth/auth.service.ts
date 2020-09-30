@@ -58,7 +58,9 @@ export class AuthService {
         user.confirmToken = confirmToken;
         user.save()
         
-        await transport.sendMail({
+        const newTransport =await transport()
+        
+        newTransport.sendMail({
             from: 'ne-pas-repondre@reseau.fr',
             to: email,
             subject: 'refaire le mot de passe',
