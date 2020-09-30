@@ -6,6 +6,16 @@ import history from 'connect-history-api-fallback';
 
 declare const module: any;
 
+const unless = function(path, middleware) {
+  return function(req, res, next) {
+      if (path === req.path) {
+          return next();
+      } else {
+          return middleware(req, res, next);
+      }
+  };
+};
+
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
@@ -16,9 +26,7 @@ async function bootstrap() {
     }
 
     if (process.env.NODE_ENV === "production") {
-      app.use(history({
-        exclusions: ['/auth/confirmToken/me/token']
-      }));
+      app.use(unless('/auth/confirmToken/me/token', history()));
       app.use('/', express.static('dist-react'));
 
       if (process.env.CLIENT_URL_SECONDE) {
